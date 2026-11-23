@@ -173,11 +173,16 @@ test.describe('PencilLoop core game (no Firebase configured)', () => {
   test('delete all my data returns to onboarding with a clean device', async ({ page }) => {
     await freshStart(page, { progress: { levels: { 'first-steps': { completed: true, bestStars: 2, attempts: 3 } }, updatedAt: 1 } })
     await page.goto('/profile')
+    await page.getByTestId('toggle-cloud-photos').click()
+    await expect(page.getByTestId('toggle-cloud-photos')).toHaveAttribute('aria-checked', 'true')
     await page.getByTestId('delete-all').click()
     await page.getByTestId('confirm-delete').click()
     await expect(page).toHaveURL(/\/welcome$/)
-    const left = await page.evaluate(() => Object.keys(localStorage).filter((k) => /profile|progress|achievements/.test(k)))
+    const left = await page.evaluate(() => Object.keys(localStorage).filter((k) => /profile|progress|achievements|guest-backup/.test(k)))
     expect(left).toEqual([])
+    // Consent belongs to the previous player: the next one must give their own.
+    const settings = await page.evaluate(() => JSON.parse(localStorage.getItem('pencilloop:settings:v1') || '{}'))
+    expect(settings).toMatchObject({ cloudPhotos: false, cloudHints: false })
   })
 
   test('offline: the game keeps working', async ({ page, context }) => {

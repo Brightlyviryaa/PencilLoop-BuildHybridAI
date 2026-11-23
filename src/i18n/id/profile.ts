@@ -63,7 +63,7 @@ export const profileId: typeof profileEn = {
     teenNote: 'Minta izin orang tua atau wali dulu sebelum menghubungkan akun Google, ya.',
     unavailable: 'Penyimpanan cloud tidak tersedia di versi aplikasi ini. Progres tetap tersimpan di perangkat ini.',
     sync: {
-      idle: 'Tersimpan otomatis',
+      idle: 'Disimpan otomatis',
       saving: 'Menyimpan...',
       saved: 'Tersimpan otomatis',
       offline: 'Sedang offline. Nanti aku simpan saat kamu online lagi.',

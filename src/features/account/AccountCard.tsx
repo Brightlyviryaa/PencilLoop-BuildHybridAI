@@ -40,9 +40,11 @@ export function AccountCard() {
           ? t.account.sync.offline
           : acct.sync === 'error'
             ? t.account.sync.error
-            : acct.phase === 'ready'
+            : acct.sync === 'saved'
               ? t.account.sync.saved
-              : t.account.sync.local
+              : acct.phase === 'ready'
+                ? t.account.sync.idle
+                : t.account.sync.local
 
   const onLink = async () => {
     setBusy(true)

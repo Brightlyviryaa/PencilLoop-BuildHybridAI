@@ -3,7 +3,7 @@ import type { AuthCredential, AuthProvider, User } from 'firebase/auth'
 import { isFirebaseConfigured } from '../ai/config'
 import { profileStore } from '../profile/profile'
 import { achievementsStore } from '../progress/achievements'
-import { clearLocalPlayerData, progressStore } from '../progress/store'
+import { clearLocalPlayerData, progressStore, settingsStore } from '../progress/store'
 import { getServices, type Services } from './firebaseClient'
 import { deleteCloudData, mergeIntoLocal, pullAll, replaceLocal, startPusher, type CloudSnapshot, type SyncStatus } from './sync'
 
@@ -349,10 +349,21 @@ export async function signOutPlayer(): Promise<void> {
   wipeLocal()
 }
 
-function wipeLocal() {
+/**
+ * Forget the player on this device. Cloud consents are personal, so they are
+ * reset too: the next player on this device must give their own permission.
+ * Language, sound and motion are device preferences and are kept.
+ */
+export function wipeLocal() {
   clearLocalPlayerData()
   achievementsStore.reset()
   profileStore.reset()
+  settingsStore.set((st) => ({ ...st, cloudPhotos: false, cloudHints: false }))
+  try {
+    localStorage.removeItem('pencilloop:guest-backup:v1')
+  } catch {
+    /* ignore */
+  }
   lastSnap = null
   attachedUid = null
 }
@@ -385,11 +396,6 @@ export async function deleteEverything(): Promise<{ ok: boolean; code?: AccountE
     }
   }
   wipeLocal()
-  try {
-    localStorage.removeItem('pencilloop:guest-backup:v1')
-  } catch {
-    /* ignore */
-  }
   set({ phase: isFirebaseConfigured() ? 'signed-out' : 'unconfigured', uid: null, kind: null, email: null, sync: 'idle' })
   return { ok: true }
 }
