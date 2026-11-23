@@ -1,0 +1,33 @@
+/* English: progress, achievements. Plain punctuation only, no em dashes. */
+export const progressEn = {
+  progress: {
+    title: 'Your progress',
+    subtitle: 'Every try teaches you something new.',
+    stars: 'Stars',
+    levelsDone: 'Levels done',
+    points: 'Points',
+    badges: 'Badges',
+    levelList: 'Levels',
+    badgeList: 'Badges',
+    notPlayed: 'Not played yet',
+    bestScore: 'Best score',
+    fewestBlocks: 'Fewest blocks',
+    runs: 'Runs',
+    howToEarn: 'How to earn it',
+    earned: 'Earned',
+    of: (a: number, b: number) => `${a} of ${b}`,
+  },
+  achievements: {
+    'first-run': { title: 'First Run', desc: 'Run your first plan.' },
+    'first-win': { title: 'First Flag', desc: 'Finish any level.' },
+    'three-stars': { title: 'Super Tidy', desc: 'Get 3 stars on a level.' },
+    'bounce-back': { title: 'Never Give Up', desc: 'Win a level after a bump.' },
+    'loop-master': { title: 'Loop Master', desc: 'Win using a Repeat block.' },
+    'paper-planner': { title: 'Paper Planner', desc: 'Win with a plan you scanned from paper.' },
+    'clue-detective': { title: 'Clue Detective', desc: 'Use a clue, then fix your plan and win.' },
+    explorer: { title: 'Explorer', desc: 'Finish every level.' },
+    'star-collector': { title: 'Star Collector', desc: 'Get 3 stars on every level.' },
+    toastMany: (n: number) => `${n} new badges!`,
+    toast: 'New badge!',
+  },
+}

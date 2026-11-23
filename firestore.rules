@@ -1,0 +1,107 @@
+rules_version = '2';
+
+// PencilLoop Firestore rules.
+//
+//   users/{uid}                          profile-safe fields + preferences
+//   users/{uid}/progress/{levelId}       per-level results
+//   users/{uid}/achievements/{badgeId}   unlock time
+//   progress/{uid}                       v1 backup: read + delete only (migration)
+//
+// Every document belongs to exactly one Firebase Auth user. Nobody can read
+// or write another user's data, list collections, or store free text other
+// than an adult player's short nickname. Birthdays are never accepted.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function levelIds() {
+      return ['first-steps', 'around-the-blocks', 'smart-loop', 'pond-patrol', 'mirror-stairs', 'winding-road'];
+    }
+
+    function badgeIds() {
+      return ['first-run', 'first-win', 'three-stars', 'bounce-back', 'loop-master', 'paper-planner', 'clue-detective', 'explorer', 'star-collector'];
+    }
+
+    function validPrefs(p) {
+      return p is map
+        && p.keys().hasOnly(['muted', 'volume', 'motion', 'cloudPhotos', 'cloudHints', 'autoPrepareAI'])
+        && p.keys().hasAll(['muted', 'volume', 'motion', 'cloudPhotos', 'cloudHints', 'autoPrepareAI'])
+        && p.muted is bool
+        && (p.volume is number) && p.volume >= 0 && p.volume <= 1
+        && p.motion in ['system', 'reduced', 'full']
+        && p.cloudPhotos is bool
+        && p.cloudHints is bool
+        && p.autoPrepareAI is bool;
+    }
+
+    function validUser(d) {
+      return d.keys().hasOnly(['schemaVersion', 'accountType', 'ageGroup', 'language', 'onboardingCompleted', 'preferences', 'displayName', 'gender', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll(['schemaVersion', 'accountType', 'ageGroup', 'language', 'onboardingCompleted', 'preferences', 'createdAt', 'updatedAt'])
+        && d.schemaVersion == 2
+        && d.accountType in ['anonymous', 'google']
+        && d.ageGroup in ['under13', 'teen', 'adult']
+        && d.language in ['id', 'en']
+        && d.onboardingCompleted is bool
+        && validPrefs(d.preferences)
+        && d.createdAt is timestamp
+        && d.updatedAt is timestamp
+        // Personal fields only for adult players; children's stay on the device.
+        && (!('displayName' in d) || (d.ageGroup == 'adult' && d.displayName is string && d.displayName.size() >= 1 && d.displayName.size() <= 20))
+        && (!('gender' in d) || (d.ageGroup == 'adult' && d.gender in ['male', 'female']));
+    }
+
+    function validLevel(d) {
+      return d.keys().hasOnly(['completed', 'stars', 'bestScore', 'bestMoves', 'attempts', 'completedAt', 'updatedAt'])
+        && d.keys().hasAll(['completed', 'stars', 'bestScore', 'bestMoves', 'attempts', 'completedAt', 'updatedAt'])
+        && d.completed is bool
+        && d.stars is int && d.stars >= 0 && d.stars <= 3
+        && d.bestScore is int && d.bestScore >= 0 && d.bestScore <= 100000
+        && (d.bestMoves == null || (d.bestMoves is int && d.bestMoves >= 1 && d.bestMoves <= 100))
+        && d.attempts is int && d.attempts >= 0 && d.attempts <= 100000
+        && (d.completedAt == null || d.completedAt is timestamp)
+        && (d.completed == true || d.stars == 0)
+        && d.updatedAt == request.time;
+    }
+
+    match /users/{uid} {
+      allow get, delete: if isOwner(uid);
+      allow list: if false;
+      allow create: if isOwner(uid)
+        && validUser(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isOwner(uid)
+        && validUser(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+
+      match /progress/{levelId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && levelId in levelIds() && validLevel(request.resource.data);
+      }
+
+      match /achievements/{badgeId} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && badgeId in badgeIds()
+          && request.resource.data.keys().hasOnly(['unlockedAt'])
+          && request.resource.data.unlockedAt is timestamp;
+        // Badges are permanent once earned.
+        allow update: if false;
+      }
+    }
+
+    // Legacy v1 single-document backup: the app migrates it once, then deletes it.
+    match /progress/{uid} {
+      allow get, delete: if isOwner(uid);
+      allow list, create, update: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

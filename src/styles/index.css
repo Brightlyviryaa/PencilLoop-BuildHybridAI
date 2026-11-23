@@ -1,0 +1,183 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-600: #1d4ed8;
+  --color-primary-50: #eff4ff;
+  --color-primary-100: #dbe6fe;
+  --color-ink: #172554;
+  --color-ink-soft: #3b4a75;
+  --color-ink-muted: #5b6889;
+  --color-orange: #ff9b42;
+  --color-orange-600: #e2761c;
+  --color-orange-50: #fff3e6;
+  --color-mint: #6dd6b5;
+  --color-mint-700: #127a5a;
+  --color-mint-50: #e9faf4;
+  --color-cream: #fff9f0;
+  --color-cloud: #f8faff;
+  --color-line: #dce5f2;
+  --color-danger: #dc4c54;
+  --color-danger-50: #fdeced;
+
+  --font-display: 'Nunito Variable', 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --radius-card: 22px;
+  --radius-btn: 14px;
+
+  --shadow-soft: 0 1px 2px rgb(23 37 84 / 0.06), 0 8px 24px -12px rgb(23 37 84 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(23 37 84 / 0.06), 0 18px 40px -18px rgb(23 37 84 / 0.32);
+  --shadow-press: inset 0 -3px 0 rgb(0 0 0 / 0.12);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --breakpoint-xs: 400px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    background: var(--color-cloud);
+  }
+  body {
+    @apply bg-cloud text-ink font-sans antialiased;
+    font-size: 16px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    min-height: 100dvh;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-ink;
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 10px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  ::selection {
+    background: var(--color-primary-100);
+  }
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .bg-dots {
+    background-image: radial-gradient(rgb(37 99 235 / 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+}
+
+@media (hover: hover) {
+  .group:hover > .pl-tip {
+    display: block;
+  }
+}
+.pl-tip {
+  animation: pl-tip-in 160ms var(--ease-out-soft) both;
+}
+@keyframes pl-tip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Volume slider */
+.pl-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+.pl-range::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-primary) var(--pct), #dce5f2 var(--pct));
+}
+.pl-range::-moz-range-track {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-primary) var(--pct), #dce5f2 var(--pct));
+}
+.pl-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -9px;
+  height: 28px;
+  width: 28px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid var(--color-primary);
+  box-shadow: 0 2px 6px rgb(23 37 84 / 0.25);
+  transition: transform 120ms var(--ease-out-soft);
+}
+.pl-range::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid var(--color-primary);
+}
+.pl-range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+/* Soft glow ring used on the "up next" level */
+@keyframes pl-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(37 99 235 / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgb(37 99 235 / 0);
+  }
+}
+.pl-pulse {
+  animation: pl-pulse 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-pulse,
+  .pl-tip {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

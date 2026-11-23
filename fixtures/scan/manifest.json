@@ -1,0 +1,405 @@
+[
+  {
+    "file": "01-words-basic.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 3
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 3
+      }
+    ],
+    "style": "words",
+    "note": "Level 1 solution in words"
+  },
+  {
+    "file": "02-arrows-basic.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 3
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 3
+      }
+    ],
+    "style": "arrows",
+    "note": "Arrow symbols"
+  },
+  {
+    "file": "03-forward-word.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      },
+      {
+        "type": "move",
+        "steps": 1
+      }
+    ],
+    "style": "words",
+    "note": "Synonym \"forward\""
+  },
+  {
+    "file": "04-short-LR.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      },
+      {
+        "type": "move",
+        "steps": 3
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 3
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      },
+      {
+        "type": "move",
+        "steps": 2
+      }
+    ],
+    "style": "words",
+    "note": "Level 2 solution, terse"
+  },
+  {
+    "file": "05-repeat-bracket.jpg",
+    "expected": [
+      {
+        "type": "repeat",
+        "times": 5,
+        "commands": [
+          {
+            "type": "move",
+            "steps": 1
+          },
+          {
+            "type": "turn",
+            "direction": "left"
+          },
+          {
+            "type": "move",
+            "steps": 1
+          },
+          {
+            "type": "turn",
+            "direction": "right"
+          }
+        ]
+      }
+    ],
+    "style": "words",
+    "note": "Level 3 loop"
+  },
+  {
+    "file": "06-repeat-x.jpg",
+    "expected": [
+      {
+        "type": "repeat",
+        "times": 3,
+        "commands": [
+          {
+            "type": "move",
+            "steps": 1
+          },
+          {
+            "type": "turn",
+            "direction": "right"
+          }
+        ]
+      }
+    ],
+    "style": "words",
+    "note": "Inline xN notation"
+  },
+  {
+    "file": "07-numbered-list.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 4
+      }
+    ],
+    "style": "words",
+    "note": "Numbered list"
+  },
+  {
+    "file": "08-arrows-noisy.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      },
+      {
+        "type": "move",
+        "steps": 1
+      }
+    ],
+    "style": "arrows-noise",
+    "note": "Heavy paper noise"
+  },
+  {
+    "file": "09-rotated.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 1
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      },
+      {
+        "type": "move",
+        "steps": 2
+      }
+    ],
+    "style": "rotate",
+    "note": "Photo rotated ~12\u00b0"
+  },
+  {
+    "file": "10-dim-light.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 3
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 2
+      }
+    ],
+    "style": "dim",
+    "note": "Low light gradient"
+  },
+  {
+    "file": "11-upper-case.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      },
+      {
+        "type": "move",
+        "steps": 2
+      }
+    ],
+    "style": "words",
+    "note": "Upper case"
+  },
+  {
+    "file": "12-missing-number.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 1
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 1
+      }
+    ],
+    "style": "words",
+    "note": "No number means 1"
+  },
+  {
+    "file": "13-big-number.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 5
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      }
+    ],
+    "style": "words",
+    "note": "Out-of-range \u2192 clamped to 5 with warning"
+  },
+  {
+    "file": "14-smudged.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      }
+    ],
+    "style": "smudge",
+    "note": "Illegible middle line \u2192 needsReview"
+  },
+  {
+    "file": "15-crossed-out.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 1
+      }
+    ],
+    "style": "strike",
+    "note": "Crossed-out step must be skipped"
+  },
+  {
+    "file": "16-with-doodle.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 1
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      },
+      {
+        "type": "move",
+        "steps": 3
+      }
+    ],
+    "style": "doodle",
+    "note": "Doodle (star) to ignore"
+  },
+  {
+    "file": "17-two-columns.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 1
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      }
+    ],
+    "style": "words",
+    "note": "Two steps per line"
+  },
+  {
+    "file": "18-tiny-writing.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      },
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 1
+      }
+    ],
+    "style": "tiny",
+    "note": "Small handwriting"
+  },
+  {
+    "file": "19-blue-paper.jpg",
+    "expected": [
+      {
+        "type": "move",
+        "steps": 1
+      },
+      {
+        "type": "turn",
+        "direction": "left"
+      },
+      {
+        "type": "move",
+        "steps": 2
+      },
+      {
+        "type": "turn",
+        "direction": "right"
+      }
+    ],
+    "style": "tinted",
+    "note": "Tinted paper, arrows"
+  },
+  {
+    "file": "20-not-a-plan.jpg",
+    "expected": [],
+    "style": "words",
+    "note": "Not a robot plan \u2192 expect error / no steps"
+  }
+]
