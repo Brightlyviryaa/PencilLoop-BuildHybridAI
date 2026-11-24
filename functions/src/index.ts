@@ -10,6 +10,7 @@
  * Collections (all Admin SDK only; Firestore rules deny client access):
  *   consentRequests/{requestId}  status, tokenHash, clientKeyHash, contact (deleted after answer/expiry)
  *   guardianConsents/{uid}       { status, requestId, verifiedAt } readable by the player, never writable
+ *   consentLimits/{key}          per-device / per-email request times (rate limiting)
  *   mail/{id}                    outbox for the Trigger Email extension
  *
  * Guardian verification is proportional for a prototype: control of the
@@ -35,19 +36,22 @@ export const requestGuardianConsent = onCall(opts, async (req) => {
   const v = validateRequest(req.data ?? {})
   if ('error' in v) throw new HttpsError('invalid-argument', v.error)
   const now = Date.now()
-  const since = Timestamp.fromMillis(now - 24 * 60 * 60 * 1000)
-  const [byDevice, byEmail] = await Promise.all([
-    db.collection('consentRequests').where('clientKeyHash', '==', v.clientKeyHash).where('createdAt', '>', since).get(),
-    db.collection('consentRequests').where('emailHash', '==', sha256(v.email)).where('createdAt', '>', since).get(),
-  ])
-  const times = (q: FirebaseFirestore.QuerySnapshot) => q.docs.map((d) => (d.get('createdAt') as Timestamp).toMillis())
-  if (!underRateLimit(times(byDevice), now) || !underRateLimit(times(byEmail), now)) throw new HttpsError('resource-exhausted', 'rate')
-
   const token = newToken()
   const ref = db.collection('consentRequests').doc()
   const link = `${APP_URL}/guardian#${token}`
   const mail = approvalEmail(v.lang, { approve: link, privacy: `${APP_URL}/privacy`, terms: `${APP_URL}/terms` }, OPERATOR)
+  // Rate limits are enforced atomically: per-device and per-email counters are read and
+  // updated in the same transaction that creates the request, so parallel calls cannot bypass them.
+  const deviceLimit = db.collection('consentLimits').doc(`d_${v.clientKeyHash}`)
+  const emailLimit = db.collection('consentLimits').doc(`e_${sha256(v.email)}`)
   await db.runTransaction(async (tx) => {
+    const [d, e] = await Promise.all([tx.get(deviceLimit), tx.get(emailLimit)])
+    const recent = (snap: FirebaseFirestore.DocumentSnapshot) => ((snap.get('times') as number[] | undefined) ?? []).filter((t) => now - t < 24 * 60 * 60 * 1000)
+    const dTimes = recent(d)
+    const eTimes = recent(e)
+    if (!underRateLimit(dTimes, now) || !underRateLimit(eTimes, now)) throw new HttpsError('resource-exhausted', 'rate')
+    tx.set(deviceLimit, { times: [...dTimes, now] })
+    tx.set(emailLimit, { times: [...eTimes, now] })
     tx.set(ref, {
       status: 'pending' satisfies ConsentStatus,
       tokenHash: sha256(token),
@@ -107,13 +111,16 @@ export const respondGuardianConsent = onCall(opts, async (req) => {
 /** After verification, bind the consent to the child's new anonymous account. */
 export const claimGuardianConsent = onCall(opts, async (req) => {
   if (!req.auth) throw new HttpsError('unauthenticated', 'auth')
+  const uid = req.auth.uid
   const snap = await requestFor(req.data?.requestId, req.data?.clientKey)
-  if (snap.get('status') !== 'verified') throw new HttpsError('failed-precondition', 'not-verified')
-  const bound = snap.get('uid') as string | undefined
-  if (bound && bound !== req.auth.uid) throw new HttpsError('failed-precondition', 'already-claimed')
+  // Status and binding are re-checked inside the transaction, so two accounts cannot claim one consent.
   await db.runTransaction(async (tx) => {
-    tx.update(snap.ref, { uid: req.auth!.uid })
-    tx.set(db.collection('guardianConsents').doc(req.auth!.uid), { status: 'verified', requestId: snap.id, verifiedAt: FieldValue.serverTimestamp() })
+    const cur = await tx.get(snap.ref)
+    if (cur.get('status') !== 'verified') throw new HttpsError('failed-precondition', 'not-verified')
+    const bound = cur.get('uid') as string | undefined
+    if (bound && bound !== uid) throw new HttpsError('failed-precondition', 'already-claimed')
+    tx.update(snap.ref, { uid })
+    tx.set(db.collection('guardianConsents').doc(uid), { status: 'verified', requestId: snap.id, verifiedAt: FieldValue.serverTimestamp() })
   })
   return { ok: true }
 })

@@ -5,34 +5,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "clientKeyHash",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "consentRequests",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "emailHash",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "consentRequests",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
           "fieldPath": "status",
           "order": "ASCENDING"
         },
