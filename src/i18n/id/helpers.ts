@@ -119,6 +119,7 @@ export const helpersId: typeof helpersEn = {
       'api-not-enabled': 'Layanan AI belum dinyalakan untuk aplikasi ini.',
       'bad-response': 'Aku tidak menemukan langkah robot. Coba foto yang lebih jelas, pakai pensil gelap di kertas putih.',
       blocked: 'AI tidak mau membaca gambar ini. Coba foto kertasnya saja.',
+      'cloud-paused': 'AI lewat internet sedang istirahat sebentar. Kamu tetap bisa menyusun langkahnya sendiri.',
       unknown: 'Ada yang tidak beres. Coba lagi, ya.',
     },
     imageErrors: {

@@ -2,6 +2,8 @@
 
 Record the **real app** at https://pencilloop-f476c.web.app. If the on-device segment can't be verified on your hardware, cut it. Never fake a badge.
 
+Strongest version: show the **same clue twice**, once on a Chrome laptop with cloud permission off (badge *AI on this device*) and once on a phone (badge *AI over the internet*). That single cut is the whole hybrid story. Add English subtitles if you narrate in Indonesian.
+
 | Time | Screen | Say |
 |---|---|---|
 | 0:00-0:15 | Phone, first visit: **Siap main?**, switch ID ↔ EN | "PencilLoop is a coding game for kids, in Indonesian and English. The language switches instantly." |
@@ -10,4 +12,4 @@ Record the **real app** at https://pencilloop-f476c.web.app. If the on-device se
 | 1:05-1:30 | Paper plan → **Pindai** → consent → steps appear with the source badge | "The photo stays in the tab until the child agrees. Firebase AI Logic turns it into editable blocks, and the badge comes straight from the SDK's inferenceSource." |
 | 1:30-1:55 | Desktop: level map, Progress tab, Profile → **AI information** (preparation status) | "On Chrome desktop, Gemini Nano downloads in the background. Until it's ready the cloud answers, with permission. The technical status lives here, not on the game screen." |
 | 1:55-2:20 | Profile → **Simpan progres dengan Google** (adult profile) | "Players start anonymous. Linking Google keeps the same account, and if that Google account already has a save, we ask before combining anything." |
-| 2:20-2:40 | Architecture / privacy matrix | "React + Vite on Firebase Hosting, Firebase AI Logic hybrid inference, App Check, Anonymous + Google Auth, Firestore with tested security rules. No ads, no stored photos." |
+| 2:20-2:40 | Architecture / privacy matrix | "React + Vite on Firebase Hosting, Firebase AI Logic hybrid inference, App Check, Remote Config to switch the cloud model or pause the cloud without a redeploy, Anonymous + Google Auth, Firestore with tested security rules. No ads, no stored photos." |

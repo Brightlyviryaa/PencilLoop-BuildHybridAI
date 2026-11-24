@@ -24,8 +24,9 @@ import { Button } from '../components/Button'
 import { Card, SettingRow, Toggle } from '../components/Controls'
 import { aiStore, isLocalPreparable, useAI } from '../features/ai/aiStore'
 import { chromeMajorVersion } from '../features/ai/capabilities'
-import { CLOUD_MODEL, appCheckConfig } from '../features/ai/config'
+import { appCheckConfig } from '../features/ai/config'
 import { getAppCheckStatus } from '../features/ai/firebase'
+import { currentCloudConfig, getRemoteConfigStatus } from '../features/ai/remoteConfig'
 import { AIUnavailableError, requestHint, type ActualSource } from '../features/ai/hybrid'
 import { decideRouting } from '../features/ai/routing'
 import { buildHintContext } from '../features/hints/context'
@@ -45,6 +46,8 @@ export default function AIInfoPage() {
   const [techOpen, setTechOpen] = useState(false)
   const chrome = chromeMajorVersion()
   const appCheck = getAppCheckStatus()
+  const rcStatus = getRemoteConfigStatus()
+  const cloudCfg = currentCloudConfig()
   const [test, setTest] = useState<
     | { state: 'idle' }
     | { state: 'running' }
@@ -88,7 +91,12 @@ export default function AIInfoPage() {
     { label: r.network, value: ai.online ? r.online : r.offline, ok: ai.online ? 'yes' : 'maybe' },
     { label: r.photoPerm, value: settings.cloudPhotos ? r.allowed : r.askEveryTime, ok: settings.cloudPhotos ? 'yes' : 'maybe' },
     { label: r.cluePerm, value: settings.cloudHints ? r.allowed : r.askEveryTime, ok: settings.cloudHints ? 'yes' : 'maybe' },
-    { label: r.model, value: <code className="rounded bg-cloud px-1.5 py-0.5 text-[13px]">{CLOUD_MODEL}</code>, ok: 'yes' },
+    { label: r.model, value: <code className="rounded bg-cloud px-1.5 py-0.5 text-[13px]">{cloudCfg.model}</code>, ok: 'yes' },
+    {
+      label: r.remoteConfig,
+      value: cloudCfg.enabled ? r.rcValues[rcStatus] : r.cloudPaused,
+      ok: !cloudCfg.enabled || rcStatus === 'error' ? 'maybe' : rcStatus === 'unsupported' ? 'no' : 'yes',
+    },
   ]
 
   const runTest = async () => {

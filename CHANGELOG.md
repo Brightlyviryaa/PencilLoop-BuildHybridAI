@@ -2,6 +2,13 @@
 
 All notable changes to PencilLoop. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-11-24
+
+### Added
+- **Firebase Remote Config for the cloud AI:** model name, clue and scan temperatures, and a kill switch (`ai_cloud_enabled`) that forces every request on-device. Values are validated and fetched only when a request may use the cloud. Template in `remoteconfig.template.json`, deployed with `npm run deploy`.
+- *Profile > AI information* shows whether the cloud settings came from Remote Config.
+- README: the problem we solve, why hybrid inference is the core of the design, a 3-minute guide for judges and the list of Firebase products used. Devpost text in `docs/DEVPOST.md`.
+
 ## [0.5.0] - 2026-11-24 - Prototype v0.5
 
 ### Gameplay and editor

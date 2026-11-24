@@ -1,8 +1,9 @@
 import type { GenerativeModel } from 'firebase/ai'
 import type { Command } from '../maze/types'
 import type { HintContext } from '../hints/context'
-import { CLOUD_MODEL, isFirebaseConfigured } from './config'
+import { isFirebaseConfigured } from './config'
 import { getFirebaseApp } from './firebase'
+import { currentCloudConfig, loadCloudConfig, type CloudAIConfig } from './remoteConfig'
 import { HINT_JSON_SCHEMA, SCAN_JSON_SCHEMA, hintPrompt, scanPrompt, type PromptLang } from './prompts'
 import { SanitizeError, extractJson, sanitizeHint, sanitizeScan, type HintResult } from './sanitize'
 
@@ -31,6 +32,7 @@ export type AIErrorKind =
   | 'api-not-enabled'
   | 'bad-response'
   | 'blocked'
+  | 'cloud-paused'
   | 'unknown'
 
 export class AIUnavailableError extends Error {
@@ -44,8 +46,9 @@ export class AIUnavailableError extends Error {
 type Kind = 'scan' | 'hint'
 const modelCache = new Map<string, Promise<GenerativeModel>>()
 
-async function getModel(kind: Kind, routing: Routing): Promise<GenerativeModel> {
-  const key = `${kind}:${routing}`
+async function getModel(kind: Kind, routing: Routing, cfg: CloudAIConfig = currentCloudConfig()): Promise<GenerativeModel> {
+  const temperature = kind === 'scan' ? cfg.scanTemperature : cfg.hintTemperature
+  const key = `${kind}:${routing}:${cfg.model}:${temperature}`
   let p = modelCache.get(key)
   if (!p) {
     p = (async () => {
@@ -57,11 +60,11 @@ async function getModel(kind: Kind, routing: Routing): Promise<GenerativeModel> 
       return getGenerativeModel(ai, {
         mode: routing === 'local-only' ? InferenceMode.ONLY_ON_DEVICE : InferenceMode.PREFER_ON_DEVICE,
         inCloudParams: {
-          model: CLOUD_MODEL,
+          model: cfg.model,
           generationConfig: {
             responseMimeType: 'application/json',
             responseJsonSchema: schema as unknown as Record<string, unknown>,
-            temperature: kind === 'scan' ? 0.1 : 0.6,
+            temperature,
             maxOutputTokens: kind === 'scan' ? 1024 : 200,
           },
         },
@@ -98,6 +101,32 @@ export function warmModels(): Promise<unknown> {
 export async function prepareLocalModel(kind: Kind, onProgress?: (fraction: number) => void): Promise<void> {
   const model = await getModel(kind, 'prefer-local')
   await model.initializeDeviceModel(onProgress)
+}
+
+interface Resolved {
+  routing: Routing
+  cfg: CloudAIConfig
+  /** Remote Config paused the cloud fallback, so this request was forced on-device. */
+  paused: boolean
+}
+
+/**
+ * Applies Remote Config to a request that may use the cloud. Local-only
+ * requests skip it entirely, so nothing is fetched without cloud consent.
+ */
+async function resolve(routing: Routing): Promise<Resolved> {
+  if (routing === 'local-only') return { routing, cfg: currentCloudConfig(), paused: false }
+  const app = await getFirebaseApp()
+  const cfg = app ? await loadCloudConfig(app) : currentCloudConfig()
+  return cfg.enabled ? { routing, cfg, paused: false } : { routing: 'local-only', cfg, paused: true }
+}
+
+function mapRequestError(e: unknown, r: Resolved | null): AIUnavailableError {
+  if (e instanceof SanitizeError) return new AIUnavailableError('bad-response', e.message)
+  const err = mapError(e)
+  if (r?.paused && err.kind === 'local-unavailable')
+    return new AIUnavailableError('cloud-paused', 'Cloud AI is paused by the app operator and no on-device model is ready.')
+  return err
 }
 
 function mapError(e: unknown): AIUnavailableError {
@@ -144,8 +173,10 @@ export async function scanPlanImage(
 ): Promise<ScanOutput> {
   if (!isFirebaseConfigured()) throw new AIUnavailableError('unconfigured', 'Firebase is not configured for this build.')
   const t0 = performance.now()
+  let r: Resolved | null = null
   try {
-    const model = await getModel('scan', routing)
+    r = await resolve(routing)
+    const model = await getModel('scan', r.routing, r.cfg)
     const result = await model.generateContent([
       scanPrompt(lang),
       { type: 'inlineData', inlineData: { data: image.base64, mimeType: image.mimeType } },
@@ -154,11 +185,10 @@ export async function scanPlanImage(
     const parsed = sanitizeScan(extractJson(text))
     return {
       ...parsed,
-      meta: { source: sourceOf(result.response.inferenceSource), latencyMs: Math.round(performance.now() - t0), model: CLOUD_MODEL },
+      meta: { source: sourceOf(result.response.inferenceSource), latencyMs: Math.round(performance.now() - t0), model: r.cfg.model },
     }
   } catch (e) {
-    if (e instanceof SanitizeError) throw new AIUnavailableError('bad-response', e.message)
-    throw mapError(e)
+    throw mapRequestError(e, r)
   }
 }
 
@@ -169,16 +199,17 @@ export interface HintOutput extends HintResult {
 export async function requestHint(ctx: HintContext, routing: Routing, lang: PromptLang = 'en'): Promise<HintOutput> {
   if (!isFirebaseConfigured()) throw new AIUnavailableError('unconfigured', 'Firebase is not configured for this build.')
   const t0 = performance.now()
+  let r: Resolved | null = null
   try {
-    const model = await getModel('hint', routing)
+    r = await resolve(routing)
+    const model = await getModel('hint', r.routing, r.cfg)
     const result = await model.generateContent(hintPrompt(ctx, lang))
     const parsed = sanitizeHint(extractJson(result.response.text()))
     return {
       ...parsed,
-      meta: { source: sourceOf(result.response.inferenceSource), latencyMs: Math.round(performance.now() - t0), model: CLOUD_MODEL },
+      meta: { source: sourceOf(result.response.inferenceSource), latencyMs: Math.round(performance.now() - t0), model: r.cfg.model },
     }
   } catch (e) {
-    if (e instanceof SanitizeError) throw new AIUnavailableError('bad-response', e.message)
-    throw mapError(e)
+    throw mapRequestError(e, r)
   }
 }

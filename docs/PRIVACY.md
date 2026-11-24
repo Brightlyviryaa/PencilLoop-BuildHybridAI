@@ -18,6 +18,7 @@ PencilLoop is used by children. This page records what is collected, where it li
 
 - Firestore Security Rules (`firestore.rules`) only let a signed-in user read or write their **own** documents, validate every field, reject unknown fields, and refuse a nickname or gender unless `ageGroup == 'adult'`. They are covered by `npm run test:rules` (13 tests on the emulator).
 - No analytics, no ads, no tracking. Firebase AI Logic monitoring is disabled for this project.
+- **Remote Config** is fetched only right before an AI request that the player allowed to use the cloud. It uses a Firebase Installations ID (a random app-instance ID, no personal data) and only returns the cloud model settings. Players in local-only mode, including every child without verified guardian consent, never contact it.
 - **Delete my data** (Profile) deletes the Firestore documents, the Firebase Auth account and everything on the device.
 - Children (under 13) cannot link a Google account; the app shows "Ask a grown-up" instead.
 

@@ -119,6 +119,7 @@ export const helpersEn = {
       'api-not-enabled': "The AI service isn't switched on for this app yet.",
       'bad-response': 'I could not find robot steps. Try a clearer photo with dark pencil on white paper.',
       blocked: "The AI wouldn't read this picture. Try a photo of just the paper.",
+      'cloud-paused': 'Internet AI is taking a short break. You can still fix the steps by hand.',
       unknown: 'Something went wrong. Please try again.',
     },
     imageErrors: {

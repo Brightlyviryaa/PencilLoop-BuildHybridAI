@@ -28,7 +28,7 @@ export const PRIVACY: Record<Lang, LegalSection[]> = {
     {
       title: 'Layanan Firebase dan Google',
       body: [
-        'Firebase Hosting (menyajikan aplikasi), Firebase Authentication (ID anonim dan Google), Cloud Firestore (progres), Firebase App Check (melindungi dari penyalahgunaan), Firebase AI Logic dengan model Gemini (membaca foto dan memberi petunjuk), dan Cloud Functions (alur izin orang tua, jika diaktifkan).',
+        'Firebase Hosting (menyajikan aplikasi), Firebase Authentication (ID anonim dan Google), Cloud Firestore (progres), Firebase App Check (melindungi dari penyalahgunaan), Firebase Remote Config (pengaturan model AI cloud, hanya diambil saat AI cloud diizinkan), Firebase AI Logic dengan model Gemini (membaca foto dan memberi petunjuk), dan Cloud Functions (alur izin orang tua, jika diaktifkan).',
       ],
     },
     {
@@ -67,7 +67,7 @@ export const PRIVACY: Record<Lang, LegalSection[]> = {
     {
       title: 'Firebase and Google services',
       body: [
-        'Firebase Hosting (serves the app), Firebase Authentication (anonymous and Google IDs), Cloud Firestore (progress), Firebase App Check (abuse protection), Firebase AI Logic with Gemini models (reading photos and giving clues), and Cloud Functions (parent permission flow, when enabled).',
+        'Firebase Hosting (serves the app), Firebase Authentication (anonymous and Google IDs), Cloud Firestore (progress), Firebase App Check (abuse protection), Firebase Remote Config (cloud AI model settings, fetched only when cloud AI is allowed), Firebase AI Logic with Gemini models (reading photos and giving clues), and Cloud Functions (parent permission flow, when enabled).',
       ],
     },
     {

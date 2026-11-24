@@ -59,6 +59,18 @@ Both calls use `getGenerativeModel(ai, { mode, inCloudParams, onDeviceParams })`
 
 The UI badge is set **only** from `result.response.inferenceSource`. "On-device AI ready" (from `LanguageModel.availability()`) is shown separately and never presented as "used".
 
+## Remote Config (`src/features/ai/remoteConfig.ts`)
+
+Firebase Remote Config holds the cloud-side AI settings (template: [`remoteconfig.template.json`](../remoteconfig.template.json), deployed with `firebase deploy --only remoteconfig`):
+
+| Parameter | Default | Effect |
+|---|---|---|
+| `ai_cloud_enabled` | `true` | `false` turns every request into `ONLY_ON_DEVICE` (cloud kill switch, e.g. for quota abuse). If no local model is ready the child sees a friendly "internet AI is taking a break" note. |
+| `ai_cloud_model` | `gemini-3.5-flash-lite` | `inCloudParams.model`. Only names matching `gemini-…` are accepted. |
+| `ai_hint_temperature` / `ai_scan_temperature` | `0.6` / `0.1` | Cloud sampling, clamped to safe ranges. |
+
+Values are fetched (3 s timeout, cached for an hour) **only right before a request that may use the cloud**, so players in local-only mode never contact Remote Config. Fetch failures keep the last activated values or the built-in defaults; the game never waits on it. *Profile > AI information* shows the model in use and whether the values came from Remote Config.
+
 ## Privacy routing (`src/features/ai/routing.ts`)
 
 | Local model | Cloud consent | Online | Result |
