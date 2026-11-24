@@ -86,7 +86,7 @@ Until then, children play fully on their device and nothing about them is sent t
 
 ## Release checklist (before a public launch)
 
-- [ ] Fill in `NOTICE` (copyright holder) and `VITE_OPERATOR_NAME` / `VITE_OPERATOR_EMAIL` / `VITE_OPERATOR_ADDRESS` (shown in the Privacy policy and Terms).
+- [ ] Fill in `NOTICE` (copyright holder). The Privacy policy and Terms list virya.brightly@gmail.com as the contact; add a legal name / address with `VITE_OPERATOR_NAME` / `VITE_OPERATOR_ADDRESS` if needed.
 - [ ] Legal review of the Privacy policy, Terms and the guardian verification method (UU PDP, PP 17/2025, COPPA/GDPR where relevant).
 - [ ] Deploy the consent backend and test it end to end with a real inbox.
 - [ ] Turn on App Check enforcement for Firestore; never ship a debug token.

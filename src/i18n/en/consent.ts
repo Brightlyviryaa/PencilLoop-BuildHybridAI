@@ -60,7 +60,6 @@ export const consentEn = {
   legal: {
     privacyTitle: 'Privacy policy',
     termsTitle: 'Terms of service',
-    draft: 'Draft for the PencilLoop prototype. To be reviewed by a lawyer before a public launch.',
     operatorMissing: 'Operator details are not filled in yet (configure before release).',
     updated: 'Last updated',
     back: 'Back',

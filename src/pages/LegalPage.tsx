@@ -1,4 +1,4 @@
-import { ArrowLeft, Info } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import { useLang, useT } from '../i18n'
 import { PRIVACY, TERMS } from '../legal/content'
@@ -20,9 +20,6 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
         <p className="mt-1 text-[13.5px] font-semibold text-ink-muted">
           {t.legal.updated}: {LEGAL_UPDATED}
         </p>
-        <p className="mt-3 flex items-start gap-2 rounded-[16px] bg-orange-50 px-3.5 py-2.5 text-[14px] text-ink-soft">
-          <Info size={18} className="mt-0.5 shrink-0 text-orange-600" aria-hidden /> {t.legal.draft}
-        </p>
       </header>
       <article className="mt-5 flex flex-col gap-5">
         {sections.map((s) => (
@@ -38,9 +35,9 @@ export default function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
         <section>
           <h2 className="text-[19px] font-black">{t.legal.contact}</h2>
           {OPERATOR_CONFIGURED ? (
-            <p className="mt-1.5 text-[15.5px] text-ink-soft">
-              {OPERATOR.name}
-              {OPERATOR.address ? `, ${OPERATOR.address}` : ''}. <a className="font-bold text-primary underline" href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>
+            <p className="mt-1.5 text-[15.5px] text-ink-soft" data-testid="operator-contact">
+              {OPERATOR.name && `${OPERATOR.name}${OPERATOR.address ? `, ${OPERATOR.address}` : ''}. `}
+              <a className="font-bold text-primary underline" href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>
             </p>
           ) : (
             <p className="mt-1.5 rounded-[12px] bg-danger-50 px-3 py-2 text-[14px] font-bold text-danger" data-testid="operator-missing">

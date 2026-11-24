@@ -29,7 +29,7 @@ const db = getFirestore()
 const REGION = 'asia-southeast2'
 const opts = { region: REGION, enforceAppCheck: true }
 const APP_URL = process.env.CONSENT_APP_URL ?? 'https://pencilloop-f476c.web.app'
-const OPERATOR = process.env.OPERATOR_NAME ?? '[OPERATOR NAME - configure before release]'
+const OPERATOR = process.env.OPERATOR_NAME ?? 'PencilLoop (virya.brightly@gmail.com)'
 
 /** Child's device asks a guardian. No account exists yet. */
 export const requestGuardianConsent = onCall(opts, async (req) => {

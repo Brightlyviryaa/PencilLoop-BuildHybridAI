@@ -60,7 +60,6 @@ export const consentId = {
   legal: {
     privacyTitle: 'Kebijakan privasi',
     termsTitle: 'Ketentuan layanan',
-    draft: 'Draf untuk prototipe PencilLoop. Perlu ditinjau ahli hukum sebelum peluncuran publik.',
     operatorMissing: 'Data operator belum diisi (wajib dilengkapi sebelum rilis).',
     updated: 'Terakhir diperbarui',
     back: 'Kembali',
