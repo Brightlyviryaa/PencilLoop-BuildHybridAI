@@ -6,12 +6,14 @@ interface Seed {
   progress?: object
   lang?: 'en' | 'id'
   ageGroup?: 'under13' | 'teen' | 'adult'
+  /** Seed "tutorial already done" on this device (default true). */
+  tutorialDone?: boolean
 }
 
 /** Clean slate: muted, reduced motion, English, and (by default) a finished onboarding. */
 export async function freshStart(page: Page, opts: Seed = {}) {
   await page.addInitScript(
-    ({ onboarded, progress, lang, ageGroup }) => {
+    ({ onboarded, progress, lang, ageGroup, tutorialDone }) => {
       if (sessionStorage.getItem('__seeded')) return
       sessionStorage.setItem('__seeded', '1')
       localStorage.clear()
@@ -24,8 +26,9 @@ export async function freshStart(page: Page, opts: Seed = {}) {
         localStorage.setItem('pencilloop:profile:v1', JSON.stringify({ name: 'Tester', birthDate, gender: null, ageGroup, completedAt: 1 }))
       }
       if (progress) localStorage.setItem('pencilloop:progress:v1', JSON.stringify(progress))
+      if (tutorialDone) localStorage.setItem('pencilloop:device:v1', JSON.stringify({ tutorialDone: true, dragHintSeen: true, voice: false }))
     },
-    { onboarded: opts.onboarded ?? true, progress: opts.progress ?? null, lang: opts.lang ?? 'en', ageGroup: opts.ageGroup ?? 'under13' },
+    { onboarded: opts.onboarded ?? true, progress: opts.progress ?? null, lang: opts.lang ?? 'en', ageGroup: opts.ageGroup ?? 'under13', tutorialDone: opts.tutorialDone ?? true },
   )
 }
 
@@ -36,23 +39,32 @@ export async function expectNoHorizontalOverflow(page: Page) {
 
 export const isMobile = (page: Page) => (page.viewportSize()?.width ?? 1000) < 768
 
-/** The run button differs between the mobile action bar and the desktop stage. */
+/** Desktop: the stage Run button. Phone: Run inside the plan editor, or on the map bar. */
 export function runButton(page: Page) {
-  return page.getByTestId(isMobile(page) ? 'run-button-mobile' : 'run-button')
+  if (!isMobile(page)) return page.getByTestId('run-button')
+  // When the full-screen editor is open, its own Run button is the one on top.
+  return page.locator('[data-testid="plan-screen"] [data-testid="plan-run"], body:not(:has([data-testid="plan-screen"])) [data-testid="run-button-mobile"]').first()
+}
+
+/** Phone: open the full-screen plan editor (no-op when it is already open or on desktop). */
+export async function openPlan(page: Page) {
+  // The game page is lazy-loaded: wait for it before looking for its controls.
+  await expect(page.getByTestId('maze-board')).toBeVisible()
+  if (!isMobile(page)) return
+  if (await page.getByTestId('plan-screen').isVisible()) return
+  await page.getByTestId('open-plan').click()
+  await expect(page.getByTestId('plan-screen')).toBeVisible()
 }
 
 export async function clearPlan(page: Page) {
-  if (isMobile(page)) {
-    const toggle = page.getByTestId('tray-toggle')
-    if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click()
-    const clear = page.getByRole('button', { name: 'Clear' })
-    if (await clear.isVisible()) await clear.click()
-  } else {
-    await page.getByRole('button', { name: 'Clear' }).click()
-  }
+  await openPlan(page)
+  await expect(page.locator('[data-testid="plan-count"]:visible').first()).toBeVisible()
+  const clear = page.locator('[data-testid="clear-plan"]:visible').first()
+  if ((await clear.count()) && (await clear.isEnabled())) await clear.click()
+  await expect(page.locator('[data-testid="program-block"]:visible')).toHaveCount(0)
 }
 
-/** Palette buttons exist in both tray and desktop panel; pick the visible one. */
+/** Palette buttons exist in the phone editor and the desktop panel; pick the visible one. */
 export function palette(page: Page, key: 'move' | 'left' | 'right' | 'repeat') {
   return page.locator(`[data-testid="add-${key}"]:visible`).first()
 }

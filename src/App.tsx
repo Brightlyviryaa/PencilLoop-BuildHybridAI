@@ -12,6 +12,9 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const AIInfoPage = lazy(() => import('./pages/AIInfoPage'))
 const LearnPage = lazy(() => import('./pages/LearnPage'))
 const WelcomePage = lazy(() => import('./pages/WelcomePage'))
+const TutorialPage = lazy(() => import('./pages/TutorialPage'))
+const LegalPage = lazy(() => import('./pages/LegalPage'))
+const GuardianPage = lazy(() => import('./pages/GuardianPage'))
 
 function PageSkeleton() {
   const t = useT()
@@ -44,11 +47,15 @@ function NotFound() {
 }
 
 const router = createBrowserRouter([
+  { path: '/guardian', element: page(<GuardianPage />) },
   {
     element: <AppShell />,
     children: [
       { path: '/', element: <HomePage /> },
       { path: '/welcome', element: page(<WelcomePage />) },
+      { path: '/tutorial', element: page(<TutorialPage />) },
+      { path: '/privacy', element: page(<LegalPage kind="privacy" />) },
+      { path: '/terms', element: page(<LegalPage kind="terms" />) },
       { path: '/levels', element: page(<LevelsPage />) },
       { path: '/play/:levelId', element: page(<PlayPage />) },
       { path: '/progress', element: page(<ProgressPage />) },

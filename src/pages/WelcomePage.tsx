@@ -9,6 +9,7 @@ import { Robot } from '../components/Robot'
 import { GoogleG } from '../components/GoogleG'
 import { SoundToggle } from '../components/SoundToggle'
 import { ensurePlayerAccount, signInWithGoogle } from '../features/account/account'
+import { devicePrefsStore } from '../app/devicePrefs'
 import { isFirebaseConfigured } from '../features/ai/config'
 import { prepareOnDeviceInBackground } from '../features/ai/aiStore'
 import { MazeBoard } from '../features/maze/MazeBoard'
@@ -101,7 +102,8 @@ function Onboarding() {
       completedAt: Date.now(),
     })
     void ensurePlayerAccount()
-    const target = Object.keys(progressStore.get().levels).length ? '/' : `/play/${MISSIONS[0].id}`
+    // New players meet Pip in the short tutorial first; returning players go home.
+    const target = Object.keys(progressStore.get().levels).length ? '/' : devicePrefsStore.get().tutorialDone ? `/play/${MISSIONS[0].id}` : '/tutorial'
     if (reduced) navigate(target, { replace: true })
     else {
       setLaunching(true)
@@ -157,7 +159,7 @@ function Onboarding() {
       </aside>
 
       {/* Form column */}
-      <div className="pt-safe relative mx-auto flex min-h-[100dvh] w-full max-w-[560px] flex-col px-5 pb-[max(20px,env(safe-area-inset-bottom))] lg:max-w-[600px] lg:justify-center lg:px-10">
+      <div className="pt-safe-12 relative mx-auto flex min-h-[100dvh] w-full max-w-[560px] flex-col px-5 pb-[max(20px,env(safe-area-inset-bottom))] lg:max-w-[600px] lg:justify-center lg:px-10">
         <header className="flex h-14 items-center gap-2">
           {i > 0 ? (
             <IconButton label={t.common.back} onClick={() => go(i - 1)} className="-ml-2" data-testid="welcome-back">

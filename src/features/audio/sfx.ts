@@ -24,6 +24,45 @@ export type SfxName =
   | 'unlock'
   | 'whoosh'
   | 'robot-cheer'
+  | 'pickup'
+  | 'reorder'
+  | 'drop-in-loop'
+  | 'drop-invalid'
+  | 'undo'
+  | 'redo'
+  | 'world-unlock'
+  | 'tutorial-step'
+
+/** Sound categories (used for priorities, docs and tests). */
+export const SFX_CATEGORY: Record<SfxName, 'ui' | 'editor' | 'robot' | 'reward' | 'guide'> = {
+  tap: 'ui',
+  nav: 'ui',
+  select: 'ui',
+  toggle: 'ui',
+  'sheet-open': 'ui',
+  whoosh: 'ui',
+  error: 'ui',
+  'add-block': 'editor',
+  'remove-block': 'editor',
+  pickup: 'editor',
+  reorder: 'editor',
+  'drop-in-loop': 'editor',
+  'drop-invalid': 'editor',
+  undo: 'editor',
+  redo: 'editor',
+  'scan-success': 'editor',
+  'robot-move': 'robot',
+  'robot-turn': 'robot',
+  collision: 'robot',
+  'robot-cheer': 'robot',
+  victory: 'reward',
+  star: 'reward',
+  achievement: 'reward',
+  unlock: 'reward',
+  'world-unlock': 'reward',
+  hint: 'guide',
+  'tutorial-step': 'guide',
+}
 
 type Tone = {
   freq: number
@@ -76,6 +115,26 @@ const RECIPES: Record<SfxName, Tone[]> = {
     { freq: 783.99, dur: 0.2, type: 'sine', gain: 0.4, at: 0.11 },
   ],
   whoosh: [{ freq: 260, to: 520, dur: 0.14, type: 'sine', gain: 0.22 }],
+  pickup: [{ freq: 480, to: 640, dur: 0.07, type: 'sine', gain: 0.38 }],
+  reorder: [
+    { freq: 560, dur: 0.05, type: 'triangle', gain: 0.4 },
+    { freq: 700, dur: 0.06, type: 'triangle', gain: 0.35, at: 0.04 },
+  ],
+  'drop-in-loop': [
+    { freq: 523.25, dur: 0.06, type: 'triangle', gain: 0.45 },
+    { freq: 659.25, dur: 0.06, type: 'triangle', gain: 0.42, at: 0.05 },
+    { freq: 783.99, dur: 0.1, type: 'sine', gain: 0.4, at: 0.1 },
+  ],
+  'drop-invalid': [{ freq: 260, to: 220, dur: 0.12, type: 'sine', gain: 0.4 }],
+  undo: [{ freq: 700, to: 480, dur: 0.08, type: 'sine', gain: 0.35 }],
+  redo: [{ freq: 480, to: 700, dur: 0.08, type: 'sine', gain: 0.35 }],
+  'world-unlock': [
+    { freq: 392, dur: 0.12, type: 'triangle', gain: 0.5 },
+    { freq: 523.25, dur: 0.12, type: 'triangle', gain: 0.5, at: 0.1 },
+    { freq: 659.25, dur: 0.12, type: 'triangle', gain: 0.5, at: 0.2 },
+    { freq: 1046.5, dur: 0.3, type: 'sine', gain: 0.45, at: 0.3 },
+  ],
+  'tutorial-step': [{ freq: 880, to: 1046.5, dur: 0.1, type: 'sine', gain: 0.3 }],
   'robot-cheer': [
     { freq: 880, to: 1320, dur: 0.08, type: 'square', gain: 0.12 },
     { freq: 1320, to: 990, dur: 0.1, type: 'square', gain: 0.1, at: 0.08 },
@@ -83,7 +142,7 @@ const RECIPES: Record<SfxName, Tone[]> = {
 }
 
 const MASTER_GAIN = 0.14
-const THROTTLE_MS: Partial<Record<SfxName, number>> = { tap: 45, 'robot-move': 60, 'robot-turn': 60, victory: 1500, nav: 80, star: 90, achievement: 400 }
+const THROTTLE_MS: Partial<Record<SfxName, number>> = { pickup: 120, reorder: 80, 'drop-in-loop': 120, undo: 80, redo: 80, tap: 45, 'robot-move': 60, 'robot-turn': 60, victory: 1500, nav: 80, star: 90, achievement: 400 }
 
 class SfxEngine {
   private ctx: AudioContext | null = null
@@ -92,11 +151,27 @@ class SfxEngine {
   private unlocked = false
   private last = new Map<SfxName, number>()
   private volume = 0.7
+  private ducked = false
 
   /** 0..1 on top of the quiet master gain. */
   setVolume(v: number) {
     this.volume = Math.min(1, Math.max(0, v))
-    if (this.master && this.ctx) this.master.gain.setTargetAtTime(MASTER_GAIN * this.volume * 1.6, this.ctx.currentTime, 0.02)
+    this.applyGain()
+  }
+
+  /** Lower effects while voice guidance speaks, so a button blip never covers a sentence. */
+  duck(on: boolean) {
+    this.ducked = on
+    this.applyGain()
+  }
+
+  private applyGain() {
+    if (this.master && this.ctx) this.master.gain.setTargetAtTime(MASTER_GAIN * this.volume * 1.6 * (this.ducked ? 0.35 : 1), this.ctx.currentTime, 0.05)
+  }
+
+  /** True only when the browser actually let audio start (autoplay policy). */
+  isRunning(): boolean {
+    return this.ctx?.state === 'running'
   }
 
   setMuted(m: boolean) {

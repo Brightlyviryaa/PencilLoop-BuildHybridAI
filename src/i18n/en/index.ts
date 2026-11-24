@@ -7,6 +7,9 @@ import { progressEn } from './progress'
 import { profileEn } from './profile'
 import { aiEn } from './ai'
 import { learnEn } from './learn'
+import { editorEn } from './editor'
+import { tutorialEn } from './tutorial'
+import { consentEn } from './consent'
 
 /** All English strings, one file per area. */
 export const en = {
@@ -19,6 +22,9 @@ export const en = {
   ...profileEn,
   ...aiEn,
   ...learnEn,
+  ...editorEn,
+  ...tutorialEn,
+  ...consentEn,
 }
 
 export type Dict = typeof en

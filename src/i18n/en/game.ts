@@ -107,6 +107,11 @@ export const gameEn = {
     clue: 'Give me a clue',
   },
   victory: {
+    retry: 'Try again',
+    title3: 'Wow, you did it!',
+    starRule: (blocks: number, par: number) =>
+      blocks <= par ? `${blocks} blocks. That is the tidiest plan!` : `${blocks} blocks. Use ${par} or fewer for 3 stars.`,
+    seeProgress: 'See my progress',
     label: 'Level complete',
     title: 'You did it!',
     message: (stars: number): string =>

@@ -89,3 +89,25 @@ The UI badge is set **only** from `result.response.inferenceSource`. "On-device 
 - `prepareOnDeviceInBackground()` is called synchronously from a click: the **Start the adventure!** button for new players, and the first click or key press for returning players (`AppShell`). It calls `model.initializeDeviceModel()` for the scan and clue models once per page load, never blocks the UI, and is skipped on phones, without the Prompt API, with Data Saver, or when turned off in *Profile > AI information*.
 - While the model downloads, `PREFER_ON_DEVICE` requests (with cloud consent) are answered in the cloud; afterwards they run locally. The badge always comes from `inferenceSource`.
 - Technical status (availability, preparation progress, cloud fallback, last source) lives in **Profile > AI information**, not on the game screen.
+
+## v0.5 additions
+
+### Plan editor (`src/features/editor/`)
+- The program is an `EditorNode[]` tree (move / turn / repeat with children, stable ids). The interpreter only ever sees `toCommands(nodes)`; the visual layer is never the source of truth.
+- `ast.ts` restructuring: `moveNode(nodes, id, {list, index})`, `moveIntoRepeat`, `moveOutOfRepeat`, `unwrapRepeat`, `canMoveTo` (no cycles, depth limit). All immutable; an invalid move returns the same tree.
+- `PlanEditor.tsx` uses **@dnd-kit/core** (MIT): MouseSensor (6 px), TouchSensor (220 ms hold, 8 px tolerance, so swipes still scroll), auto-scroll, DragOverlay, screen-reader announcements. Drop targets are the block rows (upper half = before, lower half = after, or into a Repeat header), empty loop bodies and list ends. The innermost target under the pointer wins.
+- Tap-to-move action strip and Alt+Arrow shortcuts give the same operations without dragging.
+- Undo/redo lives in `useGameRunner` (`{present, past, future}`, 60 steps); every edit is one step.
+
+### Phone workspace (`src/pages/PlayPage.tsx`, `src/features/game/PlanScreen.tsx`)
+- Map view (maze, goal, program ribbon, Run) and a full-screen plan editor. Stacking order is documented in `src/styles/motion.ts` (`Z`): sheets always open above the editor.
+
+### Rendering
+- `MazeBoard` draws a memoised SVG ground layer per world theme (`theme.ts`) plus a few animated layers (trail, active tile, flag, robot). Pip (`components/Robot.tsx`) is upright; heading is shown by an orbiting pointer and Pip's eyes. Animation reads the deterministic `BoardFrame`; it never feeds back into the simulation.
+
+### Tutorial and voice
+- `/tutorial` uses its own tiny boards (not levels, nothing recorded). `features/voice/narrator.ts` wraps `speechSynthesis`, picks a voice that matches the language, ducks sound effects while speaking and reports when no voice exists.
+
+### Guardian consent (`src/features/consent/`, `functions/`)
+- `cloudAllowed()` gates account creation, sync, Google linking and cloud AI routing. Minors without verified consent are local-only.
+- Cloud Functions: `requestGuardianConsent`, `getGuardianConsentStatus`, `respondGuardianConsent`, `claimGuardianConsent`, `expireGuardianRequests`. Pure rules in `functions/src/logic.ts` (unit tested). Firestore rules require `guardianConsents/{uid}.status == 'verified'` for a minor's writes.

@@ -15,6 +15,11 @@ export const profileEn = {
     },
   },
   settings: {
+    voice: 'Voice guidance',
+    voiceDesc: 'Pip reads tutorial steps aloud in your language.',
+    voiceVolume: 'Voice',
+    haptics: 'Vibration',
+    hapticsDesc: 'A tiny buzz when you pick up and drop blocks, on phones that support it.',
     language: 'Language',
     languageDesc: 'Changes right away.',
     sound: 'Sound effects',
@@ -70,6 +75,7 @@ export const profileEn = {
       connecting: 'Connecting...',
     },
     errors: {
+      guardian: 'A parent or guardian needs to say yes before this works.',
       cancelled: 'No problem, nothing changed.',
       network: 'No internet right now. Please try again later.',
       'not-enabled': "Google sign-in isn't turned on for this app yet.",

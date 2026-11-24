@@ -13,7 +13,7 @@ const prefs = { muted: false, volume: 0.7, motion: 'system', cloudPhotos: false,
 const user = (over: Record<string, unknown> = {}) => ({
   schemaVersion: 2,
   accountType: 'anonymous',
-  ageGroup: 'under13',
+  ageGroup: 'adult',
   language: 'id',
   onboardingCompleted: true,
   preferences: prefs,
@@ -47,6 +47,50 @@ beforeEach(async () => {
 
 const as = (uid: string) => env.authenticatedContext(uid).firestore()
 
+/** What the backend (Admin SDK) writes after a guardian approves. */
+const grantConsent = (uid: string, status = 'verified') =>
+  env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), `guardianConsents/${uid}`), { status, verifiedAt: Timestamp.now() })
+  })
+
+describe('guardian consent (children under 18)', () => {
+  it('a child cannot store anything in the cloud before consent is verified', async () => {
+    const db = as('kid')
+    await assertFails(setDoc(doc(db, 'users/kid'), user({ ageGroup: 'under13' })))
+    await assertFails(setDoc(doc(db, 'users/kid'), user({ ageGroup: 'teen' })))
+    const b = writeBatch(db)
+    b.set(doc(db, 'users/kid'), user({ ageGroup: 'teen' }))
+    b.set(doc(db, 'users/kid/progress/first-steps'), level())
+    await assertFails(b.commit())
+  })
+
+  it('pending, rejected or revoked consent is not enough', async () => {
+    for (const status of ['pending', 'rejected', 'revoked']) {
+      await grantConsent('kid', status)
+      await assertFails(setDoc(doc(as('kid'), 'users/kid'), user({ ageGroup: 'under13' })))
+    }
+  })
+
+  it('with verified consent the same child can sync progress and badges', async () => {
+    await grantConsent('kid')
+    const db = as('kid')
+    const b = writeBatch(db)
+    b.set(doc(db, 'users/kid'), user({ ageGroup: 'under13' }))
+    b.set(doc(db, 'users/kid/progress/first-steps'), level())
+    b.set(doc(db, 'users/kid/achievements/first-win'), { unlockedAt: serverTimestamp() })
+    await assertSucceeds(b.commit())
+  })
+
+  it('players can read but never write their own consent status', async () => {
+    await grantConsent('kid', 'pending')
+    await assertSucceeds(getDoc(doc(as('kid'), 'guardianConsents/kid')))
+    await assertFails(getDoc(doc(as('bob'), 'guardianConsents/kid')))
+    await assertFails(setDoc(doc(as('kid'), 'guardianConsents/kid'), { status: 'verified' }))
+    await assertFails(updateDoc(doc(as('kid'), 'guardianConsents/kid'), { status: 'verified' }))
+    await assertFails(setDoc(doc(as('kid'), 'consentRequests/r1'), { status: 'verified' }))
+  })
+})
+
 describe('users/{uid}', () => {
   it('owner can create, read and update their own profile', async () => {
     const db = as('alice')
@@ -70,8 +114,10 @@ describe('users/{uid}', () => {
   })
 
   it('children cannot store a name or gender; adults can store a short nickname', async () => {
-    await assertFails(setDoc(doc(as('kid'), 'users/kid'), user({ displayName: 'Rara' })))
-    await assertFails(setDoc(doc(as('kid'), 'users/kid'), user({ gender: 'female' })))
+    await grantConsent('kid')
+    await assertFails(setDoc(doc(as('kid'), 'users/kid'), user({ ageGroup: 'under13', displayName: 'Rara' })))
+    await assertFails(setDoc(doc(as('kid'), 'users/kid'), user({ ageGroup: 'under13', gender: 'female' })))
+    await assertSucceeds(setDoc(doc(as('kid'), 'users/kid'), user({ ageGroup: 'under13' })))
     await assertFails(setDoc(doc(as('teen'), 'users/teen'), user({ ageGroup: 'teen', displayName: 'Budi' })))
     await assertSucceeds(setDoc(doc(as('mom'), 'users/mom'), user({ ageGroup: 'adult', displayName: 'Mama', gender: 'female' })))
     await assertFails(setDoc(doc(as('dad'), 'users/dad'), user({ ageGroup: 'adult', displayName: 'x'.repeat(21) })))
@@ -93,6 +139,13 @@ describe('users/{uid}', () => {
 })
 
 describe('users/{uid}/progress/{levelId}', () => {
+  // The app always writes the player document first (or in the same batch).
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users/alice'), user())
+    })
+  })
+
   it('owner can save known levels with valid values', async () => {
     const db = as('alice')
     await assertSucceeds(setDoc(doc(db, 'users/alice/progress/first-steps'), level()))
@@ -114,6 +167,9 @@ describe('users/{uid}/progress/{levelId}', () => {
 
 describe('users/{uid}/achievements/{badgeId}', () => {
   it('badges can be created once and never edited', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users/alice'), user())
+    })
     const db = as('alice')
     await assertSucceeds(setDoc(doc(db, 'users/alice/achievements/first-win'), { unlockedAt: Timestamp.now() }))
     await assertFails(setDoc(doc(db, 'users/alice/achievements/first-win'), { unlockedAt: Timestamp.fromMillis(0) }))

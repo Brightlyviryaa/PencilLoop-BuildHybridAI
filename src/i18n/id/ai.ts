@@ -96,6 +96,7 @@ export const aiId: typeof aiEn = {
     testBlocked: {
       unconfigured: 'Build ini belum terhubung ke proyek Firebase.',
       offline: 'Sedang offline dan model di perangkat belum siap.',
+      guardian: 'AI cloud menunggu izin orang tua atau wali. Permainan tetap jalan.',
       consent: 'Model di perangkat belum siap dan petunjuk cloud belum diizinkan. Nyalakan petunjuk cloud di atas, atau tunggu model di perangkat siap.',
     },
     lastSession: (s: string) => `Sumber terakhir di sesi ini: ${s}`,

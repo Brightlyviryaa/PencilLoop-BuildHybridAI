@@ -1,6 +1,6 @@
 import { BookOpen, Cpu, Image, Loader2, MessageCircleQuestion, Pencil, ShieldCheck, Trash2, UserRound } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { playSfx } from '../app/hooks'
 import { Avatar } from '../components/Avatar'
 import { Button } from '../components/Button'
@@ -9,6 +9,7 @@ import { Sheet } from '../components/Sheet'
 import { showToast } from '../components/toast'
 import { deleteEverything } from '../features/account/account'
 import { AccountCard } from '../features/account/AccountCard'
+import { ConsentCard } from '../features/consent/ConsentCard'
 import { SettingsPanel } from '../features/profile/SettingsPanel'
 import {
   NAME_MAX,
@@ -37,7 +38,7 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-[1100px] px-4 pb-6 md:px-6 lg:px-8 lg:pt-8">
-      <header className="pt-safe pt-4 lg:pt-0">
+      <header className="pt-safe-16 lg:pt-0">
         <h1 className="text-[30px] font-black leading-tight lg:text-[44px]">{t.profile.title}</h1>
       </header>
 
@@ -56,6 +57,8 @@ export default function ProfilePage() {
               {t.common.edit}
             </Button>
           </Card>
+
+          <ConsentCard />
 
           <Card aria-labelledby="acct">
             <h2 id="acct" className="mb-3 font-display text-sm font-extrabold uppercase tracking-wider text-ink-muted">
@@ -146,6 +149,14 @@ export default function ProfilePage() {
             </li>
           ))}
         </ul>
+        <p className="flex gap-4 pb-2 text-[14px] font-bold">
+          <Link to="/privacy" className="text-primary underline" data-testid="link-privacy">
+            {t.legal.privacyTitle}
+          </Link>
+          <Link to="/terms" className="text-primary underline" data-testid="link-terms">
+            {t.legal.termsTitle}
+          </Link>
+        </p>
       </Sheet>
 
       <Sheet

@@ -5,9 +5,9 @@
 ```bash
 npm run typecheck   # TypeScript (tsc -b)
 npm run lint        # oxlint, warnings fail the run
-npm test            # Vitest (94): interpreter + 6 missions, editor AST, sanitizer, privacy router, i18n completeness, profile validation, achievements
-npm run test:rules  # Firestore Security Rules on the emulator (13): owner-only access, schema, child data limits
-npm run test:e2e    # Playwright (46): desktop + mobile + 9-viewport sweep + Auth/Firestore emulator journeys
+npm test            # Vitest (123): interpreter + 6 missions, par reachability, editor tree restructuring, sanitizer, privacy router (incl. minors), consent + consent backend logic, i18n completeness, profile validation, achievements
+npm run test:rules  # Firestore Security Rules on the emulator (17): owner-only access, schema, child data limits, guardian consent
+npm run test:e2e    # Playwright (55): desktop + mobile (touch drag, fake camera, tutorial) + 9-viewport sweep + Auth/Firestore emulator journeys
 ```
 
 The emulators need Java 21 (`brew install openjdk@21`; the scripts default `JAVA_HOME` to `/opt/homebrew/opt/openjdk@21`).
@@ -70,3 +70,8 @@ Results from 2026-11-23 are in [scan-accuracy.md](scan-accuracy.md).
 - Keyboard: Tab through blocks; Enter selects; Alt+↑/↓ reorders; Delete removes; Space runs/pauses (when focus is not on a control); Esc closes dialogs; focus returns to the trigger.
 - Reduced motion: Settings → Motion → *Calm* (or OS setting) → robot steps without tweening, no confetti.
 - Mute: Settings or speaker icon → no sounds anywhere, including victory.
+
+## Notes for v0.5
+
+- Playwright starts the Firestore emulator for the account project; if a run is interrupted, a leftover Java process can keep port 8080 busy. Stop it with `pkill -f cloud-firestore-emulator` before the next run.
+- The camera test uses Chromium's fake camera (`--use-fake-device-for-media-stream`). Try the real camera on a phone over HTTPS before a demo.

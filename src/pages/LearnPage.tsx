@@ -16,7 +16,7 @@ export default function LearnPage() {
   const L = t.learn
   return (
     <div className="mx-auto flex w-full max-w-[1300px] flex-col gap-5 px-4 pb-6 md:px-6 lg:gap-6 lg:px-8 lg:pt-8 print:max-w-none print:p-0">
-      <header className="pt-safe max-w-3xl pt-3 lg:pt-0 print:hidden">
+      <header className="pt-safe-16 max-w-3xl lg:pt-0 print:hidden">
         <Link to="/profile" className="-ml-2 inline-flex h-11 items-center gap-1.5 rounded-xl px-2 text-sm font-extrabold text-ink-soft hover:bg-primary-50 lg:hidden" onClick={() => playSfx('nav')}>
           <ArrowLeft size={18} aria-hidden /> {t.profile.title}
         </Link>

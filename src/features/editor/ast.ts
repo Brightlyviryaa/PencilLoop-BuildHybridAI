@@ -177,3 +177,129 @@ export function labelFor(nodes: EditorNode[], id: string, prefix = ''): string |
 export function labelForPath(path: readonly number[]): string {
   return path.map((i) => i + 1).join('.')
 }
+
+/* ------------------------- Restructuring (v0.5) ------------------------- */
+
+/** Where a block can land: a list (top level or a Repeat body) and an index in it. */
+export interface DropPosition {
+  list: ListTarget
+  /** Index in the target list as it looks BEFORE the dragged block is removed. */
+  index: number
+}
+
+/** How many Repeat levels a node contains, counting itself (0 for move/turn). */
+export function repeatDepthOf(node: EditorNode): number {
+  if (node.type !== 'repeat') return 0
+  return 1 + Math.max(0, ...node.commands.map(repeatDepthOf))
+}
+
+/** True when `id` is `ancestorId` or sits somewhere inside it. */
+export function isInside(nodes: EditorNode[], id: string, ancestorId: string): boolean {
+  const anc = findNode(nodes, ancestorId)
+  if (!anc) return false
+  if (anc.id === id) return true
+  return anc.type === 'repeat' && findNode(anc.commands, id) !== undefined
+}
+
+export function indexOfNode(nodes: EditorNode[], id: string): number {
+  const parent = findParent(nodes, id)
+  if (parent === undefined) return -1
+  const list = parent === null ? nodes : (findNode(nodes, parent) as Extract<EditorNode, { type: 'repeat' }>).commands
+  return list.findIndex((n) => n.id === id)
+}
+
+/**
+ * Whether `id` may move into list `target`: never into itself or its own
+ * children (no cycles), and never deeper than the Repeat nesting limit.
+ */
+export function canMoveTo(nodes: EditorNode[], id: string, target: ListTarget): boolean {
+  const node = findNode(nodes, id)
+  if (!node) return false
+  if (target !== null) {
+    const t = findNode(nodes, target)
+    if (!t || t.type !== 'repeat') return false
+    if (isInside(nodes, target, id)) return false
+  }
+  return depthOf(nodes, target) + repeatDepthOf(node) <= LIMITS.maxRepeatDepth
+}
+
+/**
+ * Move an existing block (with everything inside it) to a new place. The
+ * same node object keeps its id, so nothing is duplicated or lost; an
+ * invalid move returns the tree unchanged.
+ */
+export function moveNode(nodes: EditorNode[], id: string, to: DropPosition): EditorNode[] {
+  const node = findNode(nodes, id)
+  const from = findParent(nodes, id)
+  if (!node || from === undefined || !canMoveTo(nodes, id, to.list)) return nodes
+  const fromIndex = indexOfNode(nodes, id)
+  let index = to.index
+  if (from === to.list && fromIndex < index) index -= 1
+  if (from === to.list && fromIndex === index) return nodes
+  const without = removeNode(nodes, id)
+  const listLen = to.list === null ? without.length : ((findNode(without, to.list) as Extract<EditorNode, { type: 'repeat' }>)?.commands.length ?? 0)
+  return insertNode(without, node, to.list, Math.max(0, Math.min(index, listLen)))
+}
+
+/** Put a block at the end of a Repeat. */
+export function moveIntoRepeat(nodes: EditorNode[], id: string, repeatId: string): EditorNode[] {
+  const r = findNode(nodes, repeatId)
+  if (!r || r.type !== 'repeat') return nodes
+  return moveNode(nodes, id, { list: repeatId, index: r.commands.length })
+}
+
+/** Take a block out of its Repeat and place it right after that Repeat. */
+export function moveOutOfRepeat(nodes: EditorNode[], id: string): EditorNode[] {
+  const parent = findParent(nodes, id)
+  if (!parent) return nodes
+  const grand = findParent(nodes, parent)
+  if (grand === undefined) return nodes
+  return moveNode(nodes, id, { list: grand, index: indexOfNode(nodes, parent) + 1 })
+}
+
+/** Remove a Repeat but keep the blocks that were inside it, in place. */
+export function unwrapRepeat(nodes: EditorNode[], id: string): EditorNode[] {
+  const r = findNode(nodes, id)
+  const parent = findParent(nodes, id)
+  if (!r || r.type !== 'repeat' || parent === undefined) return nodes
+  const replace = (list: EditorNode[]) => list.flatMap((n) => (n.id === id ? r.commands : [n]))
+  return mapListPublic(nodes, parent, replace)
+}
+
+function mapListPublic(nodes: EditorNode[], target: ListTarget, fn: (list: EditorNode[]) => EditorNode[]): EditorNode[] {
+  if (target === null) return fn(nodes)
+  return nodes.map((n) =>
+    n.type === 'repeat'
+      ? n.id === target
+        ? { ...n, commands: fn(n.commands) }
+        : { ...n, commands: mapListPublic(n.commands, target, fn) }
+      : n,
+  )
+}
+
+/** Repeats a block could be moved into (excluding the one it is already in). */
+export function repeatTargetsFor(nodes: EditorNode[], id: string): EditorNode[] {
+  const out: EditorNode[] = []
+  const parent = findParent(nodes, id)
+  const walk = (list: EditorNode[]) => {
+    for (const n of list) {
+      if (n.type !== 'repeat') continue
+      if (n.id !== parent && canMoveTo(nodes, id, n.id)) out.push(n)
+      walk(n.commands)
+    }
+  }
+  walk(nodes)
+  return out
+}
+
+/** Every id in the tree, depth first. */
+export function allIds(nodes: EditorNode[]): string[] {
+  return nodes.flatMap((n) => [n.id, ...(n.type === 'repeat' ? allIds(n.commands) : [])])
+}
+
+/** Structural sanity check used by tests and after every drag: unique ids, depth limit. */
+export function isHealthyTree(nodes: EditorNode[]): boolean {
+  const ids = allIds(nodes)
+  if (new Set(ids).size !== ids.length) return false
+  return Math.max(0, ...nodes.map(repeatDepthOf)) <= LIMITS.maxRepeatDepth
+}

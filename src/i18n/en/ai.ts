@@ -94,6 +94,7 @@ export const aiEn = {
     testBlocked: {
       unconfigured: 'No Firebase project is configured in this build.',
       offline: 'Offline and no on-device model is ready.',
+      guardian: 'Cloud AI waits for a parent or guardian to give permission. The game still works.',
       consent: 'No on-device model is ready and cloud clues are not allowed. Turn on cloud clues above, or wait for the on-device model.',
     },
     lastSession: (s: string) => `Last observed source this session: ${s}`,

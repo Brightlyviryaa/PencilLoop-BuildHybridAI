@@ -75,10 +75,12 @@ export function AppShell() {
   }, [path])
 
   const onWelcome = path === '/welcome'
-  if (!profile && !onWelcome) return <Navigate to="/welcome" replace />
+  // Legal pages are readable by anyone, including a parent before onboarding.
+  const isLegal = path === '/privacy' || path === '/terms'
+  if (!profile && !onWelcome && !isLegal) return <Navigate to="/welcome" replace />
 
-  const inGame = path.startsWith('/play/')
-  const showNav = !onWelcome
+  const inGame = path.startsWith('/play/') || path === '/tutorial'
+  const showNav = !onWelcome && path !== '/tutorial' && !(isLegal && !profile)
   // Top-level tab changes fade; deeper pages slide a little more.
   const routeKey = path
 

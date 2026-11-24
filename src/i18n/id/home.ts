@@ -30,8 +30,8 @@ export const homeId: typeof homeEn = {
     title: 'Pilih level',
     subtitle: 'Selesaikan satu level untuk membuka level berikutnya.',
     worlds: {
-      w1: { title: 'Dunia 1: Langkah Pertama', body: 'Maju dan belok.' },
-      w2: { title: 'Dunia 2: Negeri Ulangi', body: 'Blok Ulangi bikin jalan panjang jadi pendek.' },
+      w1: { title: 'Dunia 1: Pulau Latihan', body: 'Belajar maju dan belok.' },
+      w2: { title: 'Dunia 2: Taman Ulangi', body: 'Blok Ulangi bikin jalan panjang jadi pendek.' },
     },
     lockedHint: 'Selesaikan level sebelumnya untuk membuka level ini.',
     unlocked: 'Terbuka!',

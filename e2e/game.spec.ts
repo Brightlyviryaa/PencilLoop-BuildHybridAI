@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { clearPlan, expectNoHorizontalOverflow, freshStart, isMobile, onboard, palette, runButton } from './helpers.ts'
+import { clearPlan, expectNoHorizontalOverflow, freshStart, isMobile, onboard, openPlan, palette, runButton } from './helpers.ts'
 
 test.describe('PencilLoop core game (no Firebase configured)', () => {
-  test('first visit: onboarding in Indonesian, validation, then straight into level 1', async ({ page }) => {
-    await freshStart(page, { onboarded: false, lang: 'id' })
+  test('first visit: onboarding in Indonesian, validation, the interactive tutorial, then level 1', async ({ page }) => {
+    await freshStart(page, { onboarded: false, lang: 'id', tutorialDone: false })
     await page.goto('/')
     await expect(page).toHaveURL(/\/welcome$/)
     await expect(page.getByRole('heading', { name: 'Siap main?' })).toBeVisible()
@@ -21,6 +21,33 @@ test.describe('PencilLoop core game (no Firebase configured)', () => {
     await page.getByTestId('gender-skip').click()
     await expect(page.getByText('Catatan untuk orang tua')).toBeVisible()
     await page.getByTestId('welcome-finish').click()
+
+    // Tutorial: learn by doing, one idea per step (played without voice here).
+    await expect(page).toHaveURL(/\/tutorial$/)
+    await expect(page.getByTestId('tutorial-line')).toContainText('Aku Pip')
+    await page.getByTestId('tutorial-start-quiet').click()
+    await expect(page.getByTestId('tutorial-goal-highlight')).toBeVisible()
+    await page.getByTestId('tutorial-next').click()
+    await page.getByTestId('tutorial-add-move').click()
+    await page.getByTestId('tutorial-run').click()
+    await expect(page.getByTestId('tutorial')).toHaveAttribute('data-step', 'firstWin', { timeout: 10_000 })
+    await page.getByTestId('tutorial-next').click()
+    await page.getByTestId('tutorial-add-left').click() // a wrong turn first: friendly retry
+    await page.getByTestId('tutorial-add-move').click()
+    await page.getByTestId('tutorial-run').click()
+    await expect(page.getByTestId('tutorial-line')).toContainText('Ups!', { timeout: 10_000 })
+    await expect(page.getByTestId('tutorial-plan')).toContainText('Ketuk blok', { timeout: 10_000 })
+    await page.getByTestId('tutorial-add-right').click()
+    await page.getByTestId('tutorial-add-move').click()
+    await page.getByTestId('tutorial-run').click()
+    await expect(page.getByTestId('tutorial')).toHaveAttribute('data-step', 'loopIntro', { timeout: 10_000 })
+    await expect(page.getByTestId('tutorial-compare')).toBeVisible()
+    await page.getByTestId('tutorial-next').click()
+    await page.getByTestId('tutorial-plus').click()
+    await page.getByTestId('tutorial-plus').click()
+    await page.getByTestId('tutorial-run').click()
+    await expect(page.getByTestId('tutorial-done')).toBeVisible({ timeout: 15_000 })
+    await page.getByTestId('tutorial-play-level1').click()
     await expect(page).toHaveURL(/\/play\/first-steps$/)
     await expect(page.getByTestId('maze-board')).toBeVisible()
     const profile = await page.evaluate(() => JSON.parse(localStorage.getItem('pencilloop:profile:v1') || 'null'))
@@ -99,6 +126,7 @@ test.describe('PencilLoop core game (no Firebase configured)', () => {
       if ((u.protocol === 'http:' || u.protocol === 'https:') && u.hostname !== 'localhost') external.push(r.url())
     })
     await page.goto('/play/first-steps')
+    await openPlan(page)
     await page.getByTestId(isMobile(page) ? 'scan-button-mobile' : 'scan-button').click()
     const sheet = page.getByTestId('scan-sheet')
     await expect(sheet).toBeVisible()
@@ -116,9 +144,8 @@ test.describe('PencilLoop core game (no Firebase configured)', () => {
     await page.goto('/play/smart-loop')
     await expect(page.getByRole('heading', { name: /Level 3 is locked/ })).toBeVisible()
     await page.goto('/levels')
-    const id = isMobile(page) ? 'level-node-smart-loop' : 'level-card-smart-loop'
-    await expect(page.getByTestId(id)).toHaveAttribute('data-state', 'locked')
-    await expect(page.getByTestId(isMobile(page) ? 'level-node-first-steps' : 'level-card-first-steps')).toHaveAttribute('data-state', 'next')
+    await expect(page.getByTestId('level-node-smart-loop')).toHaveAttribute('data-state', 'locked')
+    await expect(page.getByTestId('level-node-first-steps')).toHaveAttribute('data-state', 'next')
   })
 
   test('level 3 offers Repeat and the loop solution wins', async ({ page }) => {
@@ -165,7 +192,7 @@ test.describe('PencilLoop core game (no Firebase configured)', () => {
     await expect(toggle).toHaveAttribute('aria-checked', 'false')
     await toggle.click()
     await expect(toggle).toHaveAttribute('aria-checked', 'true')
-    await page.getByRole('slider', { name: 'Volume' }).fill('40')
+    await page.getByRole('slider', { name: 'Volume', exact: true }).fill('40')
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('pencilloop:settings:v1') || '{}'))
     expect(saved).toMatchObject({ muted: false, volume: 0.4 })
   })

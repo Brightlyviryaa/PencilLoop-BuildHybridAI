@@ -27,3 +27,11 @@ export const pageVariants = {
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 },
 }
+
+/**
+ * Stacking order (z-index), lowest to highest:
+ * 40 bottom tab bar · 45 phone plan editor · 50 sheets/dialogs (scan, hint, settings) ·
+ * 60 victory · 70 toasts · 90 drag feedback. A sheet opened from the plan editor
+ * therefore always appears on top of it.
+ */
+export const Z = { nav: 40, planScreen: 45, sheet: 50, victory: 60, toast: 70, drag: 90 } as const

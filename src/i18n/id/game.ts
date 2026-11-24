@@ -107,6 +107,11 @@ export const gameId: typeof gameEn = {
     clue: 'Kasih aku petunjuk',
   },
   victory: {
+    retry: 'Coba lagi',
+    title3: 'Wah, berhasil!',
+    starRule: (blocks: number, par: number) =>
+      blocks <= par ? `${blocks} blok. Rencana paling rapi!` : `${blocks} blok. Pakai ${par} blok atau kurang untuk 3 bintang.`,
+    seeProgress: 'Lihat progresku',
     label: 'Level selesai',
     title: 'Hebat! Kamu berhasil!',
     message: (stars: number) =>

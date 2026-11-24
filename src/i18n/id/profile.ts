@@ -17,6 +17,11 @@ export const profileId: typeof profileEn = {
     },
   },
   settings: {
+    voice: 'Panduan suara',
+    voiceDesc: 'Pip membacakan langkah tutorial dalam bahasamu.',
+    voiceVolume: 'Suara',
+    haptics: 'Getar',
+    hapticsDesc: 'Getaran kecil saat mengangkat dan menaruh blok, di HP yang mendukung.',
     language: 'Bahasa',
     languageDesc: 'Langsung berubah.',
     sound: 'Efek suara',
@@ -72,6 +77,7 @@ export const profileId: typeof profileEn = {
       connecting: 'Menghubungkan...',
     },
     errors: {
+      guardian: 'Orang tua atau wali perlu memberi izin dulu.',
       cancelled: 'Tidak apa-apa, tidak ada yang berubah.',
       network: 'Sedang tidak ada internet. Coba lagi nanti, ya.',
       'not-enabled': 'Masuk dengan Google belum dinyalakan untuk aplikasi ini.',

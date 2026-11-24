@@ -1,6 +1,22 @@
 /* English: progress, achievements. Plain punctuation only, no em dashes. */
 export const progressEn = {
   progress: {
+    headline: 'See how far your adventure goes!',
+    subheadline: 'Every try makes you better.',
+    hello: (name: string) => `Hi, ${name}!`,
+    starsLabel: (a: number, b: number) => `${a} of ${b} stars`,
+    summaryLine: (levels: number, levelsMax: number, points: number) => `${levels}/${levelsMax} levels, ${points} points`,
+    worldsTitle: 'Your worlds',
+    worldDone: 'World complete!',
+    worldLevels: (a: number, b: number) => `${a} of ${b} levels`,
+    levelResults: 'Level results',
+    showDetails: 'Show details',
+    hideDetails: 'Hide details',
+    playAgain: 'Play again',
+    playNow: 'Play',
+    bestShort: (n: number) => `Best ${n}`,
+    badgesEarned: (a: number, b: number) => `${a} of ${b} badges`,
+    lockedBadge: 'Not earned yet',
     title: 'Your progress',
     subtitle: 'Every try teaches you something new.',
     stars: 'Stars',

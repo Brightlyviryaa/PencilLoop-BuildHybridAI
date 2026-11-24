@@ -36,27 +36,31 @@ export function StatusMessage({
           animate={info.tone === 'error' ? { opacity: 1, y: 0, x: [0, -6, 5, -3, 0] } : { opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: DUR.reveal, ease: EASE_OUT }}
-          className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[18px] border-2 ${tone.cls} ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}
+          className={`rounded-[18px] border-2 ${tone.cls} ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}
         >
-          <tone.Icon size={compact ? 20 : 22} className={`shrink-0 ${tone.icon}`} aria-hidden />
-          <div className="min-w-0 flex-1">
-            <p className={`font-display font-extrabold leading-snug ${compact ? 'text-[15px]' : 'text-[17px]'}`}>{info.title}</p>
-            {info.detail && !compact && <p className="text-sm text-ink-muted">{info.detail}</p>}
-          </div>
-          {canHelp && (onShowMe || onClue) && (
-            <div className="flex shrink-0 gap-2">
-              {onShowMe && info.failedStepIndex !== undefined && (
-                <Button size="sm" variant="secondary" onClick={onShowMe} icon={<MapPin size={16} aria-hidden />}>
-                  {t.status.showMe}
-                </Button>
-              )}
-              {onClue && (
-                <Button size="sm" variant="orange" onClick={onClue} icon={<Lightbulb size={16} aria-hidden />} data-testid="clue-button">
-                  {t.status.clue}
-                </Button>
-              )}
+          <div className={compact ? 'flex flex-col gap-2' : 'flex flex-wrap items-center gap-x-3 gap-y-2'}>
+            <div className={`flex min-w-0 items-start gap-2.5 ${compact ? '' : 'flex-[1_1_260px]'}`}>
+              <tone.Icon size={compact ? 20 : 22} className={`mt-0.5 shrink-0 ${tone.icon}`} aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className={`font-display font-extrabold leading-snug ${compact ? 'text-[15px]' : 'text-[17px]'}`}>{info.title}</p>
+                {info.detail && !compact && <p className="text-sm text-ink-muted">{info.detail}</p>}
+              </div>
             </div>
-          )}
+            {canHelp && (onShowMe || onClue) && (
+              <div className={compact ? 'grid auto-cols-fr grid-flow-col gap-2' : 'flex shrink-0 gap-2'}>
+                {onShowMe && info.failedStepIndex !== undefined && (
+                  <Button size="sm" variant="secondary" onClick={onShowMe} icon={<MapPin size={16} aria-hidden />} className="whitespace-nowrap">
+                    {t.status.showMe}
+                  </Button>
+                )}
+                {onClue && (
+                  <Button size="sm" variant="orange" onClick={onClue} icon={<Lightbulb size={16} aria-hidden />} className="whitespace-nowrap" data-testid="clue-button">
+                    {t.status.clue}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>

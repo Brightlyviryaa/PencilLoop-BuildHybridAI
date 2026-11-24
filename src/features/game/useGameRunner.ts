@@ -4,7 +4,12 @@ import {
   createNode,
   fromCommands,
   insertNode,
+  moveIntoRepeat,
+  moveNode,
+  moveOutOfRepeat,
   removeNode,
+  unwrapRepeat,
+  type DropPosition,
   setList,
   shiftNode,
   toCommands,
@@ -26,13 +31,33 @@ export type PlayStatus = 'idle' | 'running' | 'paused' | 'finished'
 
 const draftKey = (id: string) => `pencilloop:draft:${id}`
 
+/**
+ * Rebuild a saved draft. Work in progress is kept even when it is not
+ * runnable yet (an empty Repeat, for example); only malformed or oversized
+ * data falls back to the level's starter blocks.
+ */
+export function parseDraft(raw: unknown, depth = 0): Command[] | null {
+  if (!Array.isArray(raw) || raw.length > LIMITS.maxNodes) return null
+  const out: Command[] = []
+  for (const c of raw as Record<string, unknown>[]) {
+    if (!c || typeof c !== 'object') return null
+    if (c.type === 'move' && Number.isInteger(c.steps) && (c.steps as number) >= LIMITS.move.min && (c.steps as number) <= LIMITS.move.max) out.push({ type: 'move', steps: c.steps as number })
+    else if (c.type === 'turn' && (c.direction === 'left' || c.direction === 'right')) out.push({ type: 'turn', direction: c.direction })
+    else if (c.type === 'repeat' && depth < LIMITS.maxRepeatDepth && Number.isInteger(c.times) && (c.times as number) >= LIMITS.repeat.min && (c.times as number) <= LIMITS.repeat.max) {
+      const inner = parseDraft(c.commands, depth + 1)
+      if (!inner) return null
+      out.push({ type: 'repeat', times: c.times as number, commands: inner })
+    } else return null
+  }
+  return countNodes(out) <= LIMITS.maxNodes ? out : null
+}
+
 function loadDraft(m: Mission): EditorNode[] {
   try {
     const raw = localStorage.getItem(draftKey(m.id))
     if (raw) {
-      const cmds = JSON.parse(raw) as Command[]
-      const t = runProgram(m, toProgram(cmds))
-      if (t.outcome !== 'INVALID_PROGRAM' || cmds.length === 0) return fromCommands(cmds)
+      const cmds = parseDraft(JSON.parse(raw))
+      if (cmds) return fromCommands(cmds)
     }
   } catch {
     /* ignore */
@@ -50,8 +75,25 @@ export interface LastWin {
   outcome: WinOutcome
 }
 
+const HISTORY_MAX = 60
+
+interface History {
+  present: EditorNode[]
+  past: EditorNode[][]
+  future: EditorNode[][]
+}
+
 export function useGameRunner(mission: Mission, reduced: boolean) {
-  const [nodes, setNodes] = useState<EditorNode[]>(() => loadDraft(mission))
+  const [hist, setHist] = useState<History>(() => ({ present: loadDraft(mission), past: [], future: [] }))
+  const nodes = hist.present
+  /** Apply an editor change as one undoable step. No-op changes are not recorded. */
+  const commit = useCallback((fn: (n: EditorNode[]) => EditorNode[]) => {
+    setHist((h) => {
+      const next = fn(h.present)
+      if (next === h.present) return h
+      return { present: next, past: [...h.past, h.present].slice(-HISTORY_MAX), future: [] }
+    })
+  }, [])
   const [trace, setTrace] = useState<Trace | null>(null)
   const [index, setIndex] = useState(-1)
   const [status, setStatus] = useState<PlayStatus>('idle')
@@ -92,9 +134,55 @@ export function useGameRunner(mission: Mission, reduced: boolean) {
   const edit = useCallback(
     (fn: (n: EditorNode[]) => EditorNode[]) => {
       if (status !== 'idle') resetRun()
-      setNodes(fn)
+      commit(fn)
     },
-    [status, resetRun],
+    [status, resetRun, commit],
+  )
+
+  const canUndo = hist.past.length > 0
+  const canRedo = hist.future.length > 0
+  const undo = useCallback(() => {
+    if (status !== 'idle') resetRun()
+    setHist((h) => (h.past.length ? { present: h.past[h.past.length - 1], past: h.past.slice(0, -1), future: [h.present, ...h.future] } : h))
+    setTarget(null)
+    playSfx('undo')
+  }, [status, resetRun])
+  const redo = useCallback(() => {
+    if (status !== 'idle') resetRun()
+    setHist((h) => (h.future.length ? { present: h.future[0], past: [...h.past, h.present], future: h.future.slice(1) } : h))
+    setTarget(null)
+    playSfx('redo')
+  }, [status, resetRun])
+
+  /** Drag-and-drop or menu move of an existing block. */
+  const move = useCallback(
+    (id: string, to: DropPosition) => {
+      edit((n) => moveNode(n, id, to))
+      playSfx(to.list ? 'drop-in-loop' : 'reorder')
+    },
+    [edit],
+  )
+  const moveInto = useCallback(
+    (id: string, repeatId: string) => {
+      edit((n) => moveIntoRepeat(n, id, repeatId))
+      playSfx('drop-in-loop')
+    },
+    [edit],
+  )
+  const moveOut = useCallback(
+    (id: string) => {
+      edit((n) => moveOutOfRepeat(n, id))
+      playSfx('reorder')
+    },
+    [edit],
+  )
+  const unwrap = useCallback(
+    (id: string) => {
+      edit((n) => unwrapRepeat(n, id))
+      if (target === id) setTarget(null)
+      playSfx('remove-block')
+    },
+    [edit, target],
   )
 
   const nodeCount = countNodes(toCommands(nodes))
@@ -146,17 +234,17 @@ export function useGameRunner(mission: Mission, reduced: boolean) {
     (cmds: Command[]) => {
       resetRun()
       setTarget(null)
-      setNodes(fromCommands(cmds))
+      commit(() => fromCommands(cmds))
     },
-    [resetRun],
+    [resetRun, commit],
   )
 
   const clearAll = useCallback(() => {
     resetRun()
     setTarget(null)
-    setNodes([])
+    commit((n) => (n.length ? [] : n))
     playSfx('remove-block')
-  }, [resetRun])
+  }, [resetRun, commit])
 
   /* ------------------------------ playback ----------------------------- */
   const computeTrace = useCallback(() => {
@@ -326,6 +414,14 @@ export function useGameRunner(mission: Mission, reduced: boolean) {
     patch,
     shift,
     reorder,
+    move,
+    moveInto,
+    moveOut,
+    unwrap,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
     replaceAll,
     clearAll,
     run,

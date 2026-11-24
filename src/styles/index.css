@@ -75,6 +75,13 @@
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
+  /* Top padding that never touches the screen edge, and grows with the notch. */
+  .pt-safe-12 {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+  .pt-safe-16 {
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }

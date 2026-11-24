@@ -30,6 +30,15 @@ export function AccountCard() {
     )
   }
 
+  if (acct.phase === 'guardian') {
+    return (
+      <p className="flex items-start gap-3 rounded-[18px] bg-cloud p-3.5 text-sm text-ink-soft" data-testid="account-guardian">
+        <ShieldAlert size={20} className="mt-0.5 shrink-0 text-ink-muted" aria-hidden />
+        {t.consent.localOnly}
+      </p>
+    )
+  }
+
   const linked = acct.kind === 'google'
   const syncText =
     acct.phase === 'loading'

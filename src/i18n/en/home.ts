@@ -28,8 +28,8 @@ export const homeEn = {
     title: 'Choose a level',
     subtitle: 'Finish a level to unlock the next one.',
     worlds: {
-      w1: { title: 'World 1: First Steps', body: 'Move and turn.' },
-      w2: { title: 'World 2: Loop Land', body: 'Repeat makes long paths short.' },
+      w1: { title: 'World 1: Training Island', body: 'Learn to move and turn.' },
+      w2: { title: 'World 2: Loop Garden', body: 'Repeat makes long paths short.' },
     },
     lockedHint: 'Finish the level before this one to unlock it.',
     unlocked: 'Unlocked!',

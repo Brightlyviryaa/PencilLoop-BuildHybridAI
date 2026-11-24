@@ -33,4 +33,11 @@ describe('decideRouting — privacy matrix', () => {
   it('unconfigured → unavailable', () => {
     expect(decideRouting({ ...base, configured: false, localReady: true })).toEqual({ action: 'unavailable', reason: 'unconfigured' })
   })
+
+  it('never routes a child to the cloud without verified guardian consent', () => {
+    const base = { configured: true, online: true, localPreparable: false, cloudConsent: true, cloudPermitted: false }
+    expect(decideRouting({ ...base, localReady: false })).toEqual({ action: 'unavailable', reason: 'guardian' })
+    expect(decideRouting({ ...base, localReady: true })).toEqual({ action: 'run', routing: 'local-only' })
+    expect(decideRouting({ ...base, localReady: false, localPreparable: true })).toEqual({ action: 'needs-choice', canPrepareLocal: true, canUseCloud: false })
+  })
 })

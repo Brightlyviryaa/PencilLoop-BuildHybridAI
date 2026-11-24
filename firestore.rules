@@ -6,6 +6,11 @@ rules_version = '2';
 //   users/{uid}/progress/{levelId}       per-level results
 //   users/{uid}/achievements/{badgeId}   unlock time
 //   progress/{uid}                       v1 backup: read + delete only (migration)
+//   guardianConsents/{uid}               written ONLY by Cloud Functions (Admin SDK); owner may read
+//
+// Children (ageGroup under13 / teen, i.e. under 18 under Indonesia's UU PDP)
+// can store anything in the cloud only after a parent or guardian's consent
+// has been verified by the backend. A player can never change that status.
 //
 // Every document belongs to exactly one Firebase Auth user. Nobody can read
 // or write another user's data, list collections, or store free text other
@@ -15,6 +20,21 @@ service cloud.firestore {
 
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
+    }
+
+    function consentVerified(uid) {
+      return exists(/databases/$(database)/documents/guardianConsents/$(uid))
+        && get(/databases/$(database)/documents/guardianConsents/$(uid)).data.status == 'verified';
+    }
+
+    // Adults store freely; minors only with verified guardian consent.
+    function mayStore(uid, ageGroup) {
+      return ageGroup == 'adult' || consentVerified(uid);
+    }
+
+    // Age group of the player as it will be after this write (works inside a batch).
+    function ageGroupAfter(uid) {
+      return getAfter(/databases/$(database)/documents/users/$(uid)).data.ageGroup;
     }
 
     function levelIds() {
@@ -71,27 +91,36 @@ service cloud.firestore {
       allow list: if false;
       allow create: if isOwner(uid)
         && validUser(request.resource.data)
+        && mayStore(uid, request.resource.data.ageGroup)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
       allow update: if isOwner(uid)
         && validUser(request.resource.data)
+        && mayStore(uid, request.resource.data.ageGroup)
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time;
 
       match /progress/{levelId} {
         allow read, delete: if isOwner(uid);
-        allow create, update: if isOwner(uid) && levelId in levelIds() && validLevel(request.resource.data);
+        allow create, update: if isOwner(uid) && levelId in levelIds() && validLevel(request.resource.data) && mayStore(uid, ageGroupAfter(uid));
       }
 
       match /achievements/{badgeId} {
         allow read, delete: if isOwner(uid);
         allow create: if isOwner(uid)
           && badgeId in badgeIds()
+          && mayStore(uid, ageGroupAfter(uid))
           && request.resource.data.keys().hasOnly(['unlockedAt'])
           && request.resource.data.unlockedAt is timestamp;
         // Badges are permanent once earned.
         allow update: if false;
       }
+    }
+
+    // Guardian consent status: only the backend writes it, so a player can never approve themselves.
+    match /guardianConsents/{uid} {
+      allow get: if isOwner(uid);
+      allow list, create, update, delete: if false;
     }
 
     // Legacy v1 single-document backup: the app migrates it once, then deletes it.

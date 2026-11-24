@@ -3,6 +3,22 @@ import type { progressEn } from '../en/progress'
 /* Bahasa Indonesia: progress, achievements. Hangat, singkat, tanpa em dash. */
 export const progressId: typeof progressEn = {
   progress: {
+    headline: 'Lihat sejauh apa petualanganmu!',
+    subheadline: 'Setiap percobaan bikin kamu makin jago.',
+    hello: (name: string) => `Hai, ${name}!`,
+    starsLabel: (a: number, b: number) => `${a} dari ${b} bintang`,
+    summaryLine: (levels: number, levelsMax: number, points: number) => `${levels}/${levelsMax} level, ${points} poin`,
+    worldsTitle: 'Dunia petualanganmu',
+    worldDone: 'Dunia selesai!',
+    worldLevels: (a: number, b: number) => `${a} dari ${b} level`,
+    levelResults: 'Hasil tiap level',
+    showDetails: 'Lihat detail',
+    hideDetails: 'Tutup detail',
+    playAgain: 'Main lagi',
+    playNow: 'Main',
+    bestShort: (n: number) => `Terbaik ${n}`,
+    badgesEarned: (a: number, b: number) => `${a} dari ${b} lencana`,
+    lockedBadge: 'Belum didapat',
     title: 'Progresmu',
     subtitle: 'Setiap percobaan mengajarkan hal baru.',
     stars: 'Bintang',

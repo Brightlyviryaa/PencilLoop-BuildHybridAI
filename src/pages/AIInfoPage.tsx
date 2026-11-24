@@ -1,3 +1,4 @@
+import { cloudAllowed } from '../features/consent/consent'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   ArrowDown,
@@ -96,7 +97,8 @@ export default function AIInfoPage() {
       online: ai.online,
       localReady: ai.localText === 'available',
       localPreparable: false,
-      cloudConsent: settings.cloudHints,
+      cloudConsent: settings.cloudHints && cloudAllowed(),
+      cloudPermitted: cloudAllowed(),
     })
     if (d.action !== 'run') {
       setTest({
@@ -139,7 +141,7 @@ export default function AIInfoPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-4 pb-6 md:px-6 lg:gap-6 lg:px-8 lg:pt-8">
-      <header className="pt-safe pt-3 lg:pt-0">
+      <header className="pt-safe-16 lg:pt-0">
         <Link to="/profile" className="-ml-2 inline-flex h-11 items-center gap-1.5 rounded-xl px-2 text-sm font-extrabold text-ink-soft hover:bg-primary-50" onClick={() => playSfx('nav')}>
           <ArrowLeft size={18} aria-hidden /> {t.profile.title}
         </Link>

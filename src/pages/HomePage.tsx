@@ -48,7 +48,7 @@ export default function HomePage() {
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5 px-4 pb-6 md:px-6 lg:gap-6 lg:px-8 lg:pt-8 2xl:max-w-[1600px]">
       {/* Greeting */}
-      <header className="pt-safe flex items-center gap-3 pt-3 lg:pt-0">
+      <header className="pt-safe-16 flex items-center gap-3 lg:pt-0">
         <Avatar name={profile?.name} size={48} />
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-[26px] font-black leading-tight lg:text-4xl" data-testid="home-greeting">

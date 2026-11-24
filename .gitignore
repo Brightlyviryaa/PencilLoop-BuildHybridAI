@@ -44,3 +44,7 @@ dist-e2e-emu
 
 # Local agent settings
 .claude/settings.local.json
+
+# Cloud Functions build output
+functions/lib
+functions/node_modules

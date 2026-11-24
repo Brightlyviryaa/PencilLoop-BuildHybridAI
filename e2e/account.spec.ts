@@ -71,30 +71,32 @@ test.beforeAll(async () => {
 
 let firstUid = ''
 
-test('onboarding creates one anonymous account and a child-safe Firestore profile', async ({ page }) => {
+test('a child without verified parent permission plays fully on the device: no account, nothing in Firestore', async ({ page }) => {
   await freshStart(page, { onboarded: false })
   await page.goto('/')
   await onboard(page, { name: 'Kiki', birthday: '2016-02-02', gender: 'female' })
   await expect(page).toHaveURL(/\/play\/first-steps$/)
-  await waitForAccount(page)
-  await expect(page.getByTestId('account-card')).toHaveAttribute('data-kind', 'anonymous')
-  // Under 13: no Google linking, a grown-up notice instead.
-  await expect(page.getByTestId('link-blocked')).toBeVisible()
-
-  const list = await accounts()
-  expect(list).toHaveLength(1)
-  const uid = list[0].localId
-  const doc = await fsDoc(`users/${uid}`)
-  expect(doc).not.toBeNull()
-  expect(Object.keys(doc!)).not.toEqual(expect.arrayContaining(['displayName']))
-  expect(doc!.ageGroup).toEqual({ stringValue: 'under13' })
-  expect(doc!).not.toHaveProperty('gender')
-  expect(doc!).not.toHaveProperty('dateOfBirth')
-
-  // Refresh: the same session is restored, no second anonymous account.
+  await winLevel1(page)
+  await page.getByTestId('next-level').click()
+  await page.getByTestId('rail-nav-profile').click()
+  // Friendly local-only status and the parent permission card.
+  await expect(page.getByTestId('account-guardian')).toBeVisible()
+  await expect(page.getByTestId('consent-card')).toHaveAttribute('data-status', 'required')
+  // The permission request is honest: the backend is not deployed in this build, so nothing is sent.
+  await page.getByTestId('guardian-phone').fill('0812 3456 7890')
+  await page.getByTestId('guardian-email').fill('ibu@example.com')
+  await page.getByTestId('guardian-send').click()
+  await expect(page.getByTestId('consent-message')).toContainText('not switched on')
   await page.reload()
-  await expect(page.getByTestId('account-card')).toHaveAttribute('data-kind', 'anonymous', { timeout: 15_000 })
-  expect(await accounts()).toHaveLength(1)
+  await expect(page.getByTestId('consent-card')).toBeVisible()
+  // UU PDP / PP 17/2025: no cloud account and no cloud data for a child before verified consent.
+  expect(await accounts()).toHaveLength(0)
+  const progress = await page.evaluate(() => JSON.parse(localStorage.getItem('pencilloop:progress:v1') || '{}'))
+  expect(progress.levels?.['first-steps']?.completed).toBe(true)
+  // The guardian contact never lands in local storage.
+  const dump = await page.evaluate(() => JSON.stringify(localStorage))
+  expect(dump).not.toContain('ibu@example.com')
+  expect(dump).not.toContain('3456')
 })
 
 test('progress and badges are saved per UID; Google linking keeps the same UID', async ({ page }) => {

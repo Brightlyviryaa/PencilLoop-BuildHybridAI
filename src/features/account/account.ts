@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react'
 import type { AuthCredential, AuthProvider, User } from 'firebase/auth'
 import { isFirebaseConfigured } from '../ai/config'
+import { cloudAllowed, consentStore, guardianStatus } from '../consent/consent'
+import { claimGuardianConsent } from '../consent/api'
 import { profileStore } from '../profile/profile'
 import { achievementsStore } from '../progress/achievements'
 import { clearLocalPlayerData, progressStore, settingsStore } from '../progress/store'
@@ -24,10 +26,12 @@ export type AccountErrorCode =
   | 'unauthorized-domain'
   | 'no-user'
   | 'requires-recent-login'
+  | 'guardian'
   | 'unknown'
 
 export interface AccountState {
-  phase: 'unconfigured' | 'loading' | 'signed-out' | 'ready'
+  /** 'guardian' = local-only until a parent or guardian's consent is verified. */
+  phase: 'unconfigured' | 'loading' | 'signed-out' | 'ready' | 'guardian'
   uid: string | null
   kind: 'anonymous' | 'google' | null
   email: string | null
@@ -94,7 +98,8 @@ function stopPusher() {
 
 function ensurePusher(s: Services) {
   const u = s.auth.currentUser
-  // Nothing is written before onboarding is complete.
+  // Nothing is written before onboarding is complete, or for a child without verified guardian consent.
+  if (!cloudAllowed()) return
   if (!u || pusher || !lastSnap || attachedUid !== u.uid || !profileStore.get()) return
   pusher = startPusher(
     s,
@@ -164,11 +169,21 @@ export async function initAccount(): Promise<void> {
       if (!u) {
         stopPusher()
         attachedUid = null
-        set({ phase: 'signed-out', uid: null, kind: null, email: null, sync: 'idle' })
-      } else describe(u)
+        set({ phase: cloudAllowed() ? 'signed-out' : 'guardian', uid: null, kind: null, email: null, sync: 'idle' })
+      } else if (cloudAllowed()) describe(u)
+      else set({ phase: 'guardian', uid: u.uid, kind: kindOf(u) })
     })
     profileStore.subscribe(() => ensurePusher(s))
+    consentStore.subscribe(() => {
+      if (cloudAllowed() && profileStore.get()) void ensurePlayerAccount()
+    })
     const u = s.auth.currentUser
+    if (!cloudAllowed()) {
+      // A child's existing cloud save is left untouched (and can be deleted from Profile),
+      // but nothing is read or written until a guardian's consent is verified.
+      set({ phase: 'guardian', uid: u?.uid ?? null, kind: u ? kindOf(u) : null })
+      return
+    }
     if (u) await attach(s, u, 'merge')
     else {
       set({ phase: 'signed-out' })
@@ -198,6 +213,10 @@ function scheduleAccountRetry() {
 
 /** Called when onboarding completes: create the anonymous account (once). */
 export async function ensurePlayerAccount(): Promise<void> {
+  if (!cloudAllowed()) {
+    if (state.phase !== 'unconfigured') set({ phase: 'guardian' })
+    return
+  }
   const s = await getServices().catch(() => null)
   if (!s) return
   if (s.auth.currentUser) {
@@ -208,6 +227,8 @@ export async function ensurePlayerAccount(): Promise<void> {
     set({ phase: 'loading', error: null })
     const cred = await s.A.signInAnonymously(s.auth)
     retryCount = 0
+    // A child's cloud data is accepted by the rules only once the consent is bound to this UID.
+    if (guardianStatus() === 'verified') await claimGuardianConsent()
     await attach(s, cred.user, 'merge')
   } catch (e) {
     const code = errorCode(e)
@@ -256,6 +277,8 @@ export function hasPendingConflict() {
 
 /** "Save your progress with Google": links Google to the current UID. */
 export async function linkGoogle(): Promise<LinkResult> {
+  // Linking stores an email in Firebase Auth: never for a child without verified guardian consent.
+  if (!cloudAllowed()) return { status: 'error', code: 'guardian' }
   const s = await getServices().catch(() => null)
   const u = s?.auth.currentUser
   if (!s || !u) return { status: 'error', code: 'no-user' }

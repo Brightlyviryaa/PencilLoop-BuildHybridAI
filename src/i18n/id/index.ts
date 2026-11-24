@@ -8,6 +8,9 @@ import { progressId } from './progress'
 import { profileId } from './profile'
 import { aiId } from './ai'
 import { learnId } from './learn'
+import { editorId } from './editor'
+import { tutorialId } from './tutorial'
+import { consentId } from './consent'
 
 /** Semua teks Bahasa Indonesia, satu file per area. Tipe Dict memastikan tidak ada key yang terlewat. */
 export const id: Dict = {
@@ -20,4 +23,7 @@ export const id: Dict = {
   ...profileId,
   ...aiId,
   ...learnId,
+  ...editorId,
+  ...tutorialId,
+  ...consentId,
 }

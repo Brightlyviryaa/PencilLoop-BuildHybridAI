@@ -8,6 +8,7 @@ import { Button } from '../../components/Button'
 import { aiStore, isLocalPreparable, isLocalReady, useAI } from '../ai/aiStore'
 import { AIUnavailableError, requestHint, type ActualSource } from '../ai/hybrid'
 import { decideRouting } from '../ai/routing'
+import { cloudAllowed } from '../consent/consent'
 import type { Command, Mission, Trace } from '../maze/types'
 import { useSettings } from '../progress/store'
 import { DUR, EASE_OUT } from '../../styles/motion'
@@ -82,12 +83,13 @@ export function HintPanel({ mission, trace, commands, attempt, onShowMe, onDone 
         online: ai.online,
         localReady: isLocalReady(ai, 'hint'),
         localPreparable: isLocalPreparable(ai, 'hint'),
-        cloudConsent,
+        cloudConsent: cloudConsent && cloudAllowed(),
+        cloudPermitted: cloudAllowed(),
       })
       if (d.action === 'run') void ask(d.routing)
       else if (d.action === 'needs-choice') setPhase({ kind: 'choice', canPrepareLocal: d.canPrepareLocal, canUseCloud: d.canUseCloud })
       else
-        showLocal(d.reason === 'unconfigured' ? t.hint.notes.unconfigured : t.hint.notes.offline)
+        showLocal(d.reason === 'unconfigured' ? t.hint.notes.unconfigured : d.reason === 'guardian' ? t.consent.cloudWaiting : t.hint.notes.offline)
     },
     [ai, ask, showLocal, t],
   )

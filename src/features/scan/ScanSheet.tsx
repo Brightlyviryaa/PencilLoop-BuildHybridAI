@@ -20,6 +20,7 @@ import { Sheet } from '../../components/Sheet'
 import { aiStore, isLocalPreparable, isLocalReady, useAI } from '../ai/aiStore'
 import { AIUnavailableError, scanPlanImage, type ActualSource, type Routing } from '../ai/hybrid'
 import { decideRouting } from '../ai/routing'
+import { cloudAllowed } from '../consent/consent'
 import { CommandPalette } from '../editor/CommandPalette'
 import { ProgramList } from '../editor/ProgramList'
 import {
@@ -41,13 +42,15 @@ import { countNodes } from '../maze/validate'
 import { useSettings } from '../progress/store'
 import { DUR, EASE_OUT } from '../../styles/motion'
 import { ImageError, prepareImage, releaseImage, type PreparedImage } from './image'
+import { CameraCapture } from './CameraCapture'
+import { cameraSupported } from './camera'
 import { useLang, useT, type Dict } from '../../i18n'
 
 type Step =
   | { kind: 'pick' }
   | { kind: 'review' }
   | { kind: 'consent'; canPrepareLocal: boolean; canUseCloud: boolean }
-  | { kind: 'unavailable'; reason: 'unconfigured' | 'offline' }
+  | { kind: 'unavailable'; reason: 'unconfigured' | 'offline' | 'guardian' }
   | { kind: 'scanning'; routing: Routing }
   | { kind: 'result'; source: ActualSource; latencyMs: number; warnings: string[]; needsReview: boolean }
   | { kind: 'error'; message: string; canRetryCloud: boolean }
@@ -57,9 +60,12 @@ interface Props {
   onClose: () => void
   mission: Mission
   onApply: (cmds: Command[]) => void
+  /** Optional "build it with blocks instead" exit when the camera can't be used. */
+  onManual?: () => void
 }
 
-export function ScanSheet({ open, onClose, mission, onApply }: Props) {
+export function ScanSheet({ open, onClose, mission, onApply, onManual }: Props) {
+  const [cameraOn, setCameraOn] = useState(false)
   const ai = useAI()
   const t = useT()
   const lang = useLang()
@@ -95,6 +101,8 @@ export function ScanSheet({ open, onClose, mission, onApply }: Props) {
   useEffect(() => {
     if (!open) releaseImage(imageRef.current)
   }, [open])
+  // The camera never stays on when the sheet is closed.
+  if (!open && cameraOn) setCameraOn(false)
 
   const load = useCallback(async (f: File, rot: 0 | 90 | 180 | 270) => {
     setBusyImage(true)
@@ -158,7 +166,8 @@ export function ScanSheet({ open, onClose, mission, onApply }: Props) {
         online: ai.online,
         localReady: isLocalReady(ai, 'scan'),
         localPreparable: isLocalPreparable(ai, 'scan'),
-        cloudConsent,
+        cloudConsent: cloudConsent && cloudAllowed(),
+        cloudPermitted: cloudAllowed(),
       })
       if (d.action === 'run') void runScan(d.routing)
       else if (d.action === 'needs-choice') setStep({ kind: 'consent', canPrepareLocal: d.canPrepareLocal, canUseCloud: d.canUseCloud })
@@ -234,15 +243,41 @@ export function ScanSheet({ open, onClose, mission, onApply }: Props) {
                   <b className="text-ink">{t.scan.noFaces}</b> {t.scan.noFacesBody}
                 </span>
               </div>
+              {cameraOn ? (
+                <CameraCapture
+                  reduced={reduced}
+                  onUse={(f) => {
+                    setCameraOn(false)
+                    onFile(f)
+                  }}
+                  onClose={() => setCameraOn(false)}
+                  onChoose={() => {
+                    setCameraOn(false)
+                    galleryRef.current?.click()
+                  }}
+                  onManual={
+                    onManual &&
+                    (() => {
+                      setCameraOn(false)
+                      onManual()
+                    })
+                  }
+                />
+              ) : (
               <div className="grid gap-3 sm:grid-cols-2">
-                {ai.mobile && (
-                  <Button size="xl" variant="primary" onClick={() => cameraRef.current?.click()} icon={<Camera size={24} aria-hidden />} disabled={busyImage}>
-                    {t.scan.takePhoto}
-                  </Button>
-                )}
                 <Button
                   size="xl"
-                  variant={ai.mobile ? 'secondary' : 'primary'}
+                  variant="primary"
+                  onClick={() => (cameraSupported() ? setCameraOn(true) : cameraRef.current?.click())}
+                  icon={<Camera size={24} aria-hidden />}
+                  disabled={busyImage}
+                  data-testid="open-camera"
+                >
+                  {cameraSupported() ? t.scan.camera.open : t.scan.takePhoto}
+                </Button>
+                <Button
+                  size="xl"
+                  variant="secondary"
                   onClick={() => galleryRef.current?.click()}
                   icon={busyImage ? <Loader2 size={24} className="animate-spin" aria-hidden /> : <ImagePlus size={24} aria-hidden />}
                   disabled={busyImage}
@@ -251,6 +286,7 @@ export function ScanSheet({ open, onClose, mission, onApply }: Props) {
                   {busyImage ? t.scan.opening : t.scan.choose}
                 </Button>
               </div>
+              )}
               <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => onFile(e.target.files?.[0])} />
               <input
                 ref={galleryRef}
@@ -337,10 +373,10 @@ export function ScanSheet({ open, onClose, mission, onApply }: Props) {
           {step.kind === 'unavailable' && (
             <div className="rounded-[20px] bg-cloud p-4">
               <p className="font-display text-lg font-extrabold">
-                {step.reason === 'unconfigured' ? t.scan.unconfiguredTitle : t.scan.offlineTitle}
+                {step.reason === 'unconfigured' ? t.scan.unconfiguredTitle : step.reason === 'guardian' ? t.consent.title : t.scan.offlineTitle}
               </p>
               <p className="mt-1.5 text-[15px] text-ink-soft">
-                {step.reason === 'unconfigured' ? t.scan.unconfiguredBody : t.scan.offlineBody}
+                {step.reason === 'unconfigured' ? t.scan.unconfiguredBody : step.reason === 'guardian' ? t.consent.cloudWaiting : t.scan.offlineBody}
               </p>
               <Button className="mt-3" variant="primary" onClick={onClose} icon={<PencilLine size={18} aria-hidden />}>
                 {t.scan.buildByHand}

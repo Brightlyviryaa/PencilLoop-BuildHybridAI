@@ -1,0 +1,25 @@
+PencilLoop
+Copyright 2026 [COPYRIGHT HOLDER - fill in the legal name of the rights holder before release]
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Trademarks
+----------
+"PencilLoop", the PencilLoop logo and the robot character "Pip" are not
+licensed under the Apache License. Section 6 of the License does not grant
+permission to use these names, logos or characters, except as required for
+reasonable and customary use in describing the origin of the Work.
+
+Original assets
+---------------
+The Pip robot artwork (src/components/Robot.tsx), the maze art
+(src/features/maze), the logo and icons in public/assets, and all sound
+effects (synthesised at runtime in src/features/audio/sfx.ts, no audio files)
+were created for this project.
+
+Third-party software
+--------------------
+Runtime dependencies are under permissive licenses (MIT, Apache-2.0, ISC,
+BSD-3-Clause, 0BSD). Fonts bundled from @fontsource-variable (Nunito,
+Plus Jakarta Sans) are under the SIL Open Font License 1.1. See each
+package's license in node_modules for the full texts.
